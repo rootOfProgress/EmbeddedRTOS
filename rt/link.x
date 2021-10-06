@@ -1,13 +1,13 @@
 
 
-// generall memory info; manual cortex m4 page 30
+/* generall memory info; manual cortex m4 page 30 */
 MEMORY
 {
-  // see page 53 at https://www.st.com/resource/en/datasheet/stm32f303vc.pdf ,
-  // flash area starts @08000000
+  /* see page 53 at https://www.st.com/resource/en/datasheet/stm32f303vc.pdf */
+  /* flash area starts @0800000 */
   FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 32K
 
-  // also sram area starts @20000000
+  /* also sram area starts @20000000 */
   SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 16K
 }
 
