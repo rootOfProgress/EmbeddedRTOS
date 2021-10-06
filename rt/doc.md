@@ -16,5 +16,5 @@ We also have to prepare the debugger in the dev env, so we choose the one from A
 
 sudo ln -s /usr/share/{your version}/bin/arm-none-eabi-{tool} /usr/bin/arm-none-eabi-{tool}
 
-
+## Boot process
    
