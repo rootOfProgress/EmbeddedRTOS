@@ -12,17 +12,16 @@ fn foo() {
     unsafe {
         let mut existing_val = ptr::read_volatile(gpioa_moder as *const u32);
 
-        // // clear out first bit (LSB)
-        // existing_val &= !(1 << 0);
+        // clear out first bit (LSB)
+        existing_val &= !(1 << 0);
 
-        // // clear out second bit (LSB)
-        // existing_val &= !(1 << 1);
+        // clear out second bit (LSB)
+        existing_val &= !(1 << 1);
 
-        // // set bit 0 & 1 to 0b01 (see p. 237, "01: General purpose output mode") first bit (LSB)
-        // existing_val |= (0b01) | (0b00);
-        existing_val = existing_val & !(0b11) & !(0b11); 
+        // set bit 0 & 1 to 0b01 (see p. 237, "01: General purpose output mode") first bit (LSB)
+        existing_val |= (0b01) | (0b00);
 
-        ptr::write_volatile(gpioa_moder as *mut u32,existing_val | (0b01) | (0b00));
+        ptr::write_volatile(gpioa_moder as *mut u32,existing_val);
     }
     let gpioa_otyper = gpioa_base | 0x04;
     unsafe {
@@ -38,11 +37,11 @@ fn foo() {
         ptr::write_volatile(gpioa_odr as *mut u32, 1)
     }
 
-    unsafe {
-        // see p 239
-        // 0: Output push-pull (reset state)
-        ptr::write_volatile(gpioa_odr as *mut u32, 0)
-    }
+    // unsafe {
+    //     // see p 239
+    //     // 0: Output push-pull (reset state)
+    //     ptr::write_volatile(gpioa_odr as *mut u32, 0)
+    // }
 }
 
 #[no_mangle]
