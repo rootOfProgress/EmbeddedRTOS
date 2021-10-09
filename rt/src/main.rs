@@ -4,9 +4,12 @@
 use core::panic::PanicInfo;
 use core::ptr;
 fn foo() {
+    // turn on gpio clock
+    // see p 166 -> IOPAEN
     let rcc_ahbenr = 0x40021000 | 0x14;
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17) }
 
+    // see p 54 reg boundaries
     let gpioa_base = 0x48000000;
     let gpioa_moder = gpioa_base | 0x00;
     unsafe {
