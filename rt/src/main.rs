@@ -3,6 +3,7 @@
 
 use core::panic::PanicInfo;
 use core::ptr;
+use gpio::gpio_driver;
 fn foo() {
     // turn on gpio clock
     // see p 166 -> IOPAEN
