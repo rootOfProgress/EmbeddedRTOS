@@ -11,22 +11,11 @@ fn foo() {
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17) }
 
     // see p 54 reg boundaries
-    let gpioa_base = 0x48000000;
-    let gpioa_moder = gpioa_base | 0x00;
-    unsafe {
-        let mut existing_val = ptr::read_volatile(gpioa_moder as *const u32);
+    // let gpioa_base = 0x48000000;
+    let gpioa_base = gpio::gpio_driver::get_port("A");
 
-        // clear out first bit (LSB)
-        existing_val &= !(1 << 0);
+    gpio::gpio_driver::set_moder(gpioa_base,gpio::gpio_driver::ModerTypes::GeneralPurposeOutputMode, 0);
 
-        // clear out second bit (LSB)
-        existing_val &= !(1 << 1);
-
-        // set bit 0 & 1 to 0b01 (see p. 237, "01: General purpose output mode") first bit (LSB)
-        existing_val |= (0b01) | (0b00);
-
-        ptr::write_volatile(gpioa_moder as *mut u32, existing_val);
-    }
     let gpioa_otyper = gpioa_base | 0x04;
     unsafe {
         // see p 237

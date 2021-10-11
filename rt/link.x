@@ -28,6 +28,11 @@ SECTIONS
     *(.text .text.*);
   } > FLASH
 
+  .rodata :
+  {
+    *(.rodata .rodata.*);
+  } > FLASH
+
   /DISCARD/ :
   {
     *(.ARM.exidx .ARM.exidx.*);
