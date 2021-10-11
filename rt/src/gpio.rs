@@ -26,7 +26,7 @@ pub mod gpio_driver {
     const GPIOA_BASE: u32 = 0x4800_0000;
     const GPIOB_BASE: u32 = 0x4800_0400;
     const GPIOC_BASE: u32 = 0x4800_0800;
-
+    const GPIOE_BASE: u32 = 0x4800_1000;
 
     struct GpioConfig {
         gpio_port: u32,
@@ -42,6 +42,7 @@ pub mod gpio_driver {
             "A" => GPIOA_BASE,
             "B" => GPIOB_BASE,
             "C" => GPIOC_BASE,
+            "E" => GPIOE_BASE,
             _ => GPIOA_BASE
         }
     }
