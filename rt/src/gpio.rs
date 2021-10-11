@@ -1,22 +1,32 @@
-pub mod gpio_driver {
-    use core::ptr;
-
-    // p52
-    const GPIOA_BASE: u32 = 0x4800_0000;
-    const GPIOB_BASE: u32 = 0x4800_0400;
-    const GPIOC_BASE: u32 = 0x4800_0800;
-
+pub mod gpio_types {
+    
     pub enum OutputTypes {
         PushPull,
         OpenDrain,
     }
-
+    
     pub enum ModerTypes {
         InputMode,
         GeneralPurposeOutputMode,
         AlternateFunctionMode,
         AnalogMode
     }
+    
+    pub enum OutputState {
+        High,
+        Low
+    }
+}
+
+pub mod gpio_driver {
+    use core::ptr;
+    use mod gpio_types;
+
+    // p52
+    const GPIOA_BASE: u32 = 0x4800_0000;
+    const GPIOB_BASE: u32 = 0x4800_0400;
+    const GPIOC_BASE: u32 = 0x4800_0800;
+
 
     struct GpioConfig {
         gpio_port: u32,
@@ -35,6 +45,37 @@ pub mod gpio_driver {
             _ => GPIOA_BASE
         }
     }
+
+    // 11.4.6 GPIO port output data register (GPIOx_ODR) (x = A..H)
+    pub fn set_odr(port_base: u32, odr_type: gpio_types::OutputState, pin: u8) {
+        let gpiox_odr_offset = 0x14;
+        let mut gpiox_odr = port_base | gpiox_odr_offset;
+
+        // 32 bit register
+        let mut current_register_content: u32;
+
+        unsafe {
+            current_register_content = ptr::read_volatile(gpiox_odr as *const u32);
+        }
+        // clear bits
+        current_register_content &= !(0b1 as u32) << pin;
+
+        let updated_register_content = match odr_type {
+            OutputState::High => {
+                current_register_content |= (0b1 as u32) << pin;
+                current_register_content
+            }
+            OutputState::Low => {
+                current_register_content |= (0b0 as u32) << pin;
+                current_register_content
+            }
+        };
+        unsafe {
+            ptr::write_volatile(gpiox_odr as *mut u32, updated_register_content);
+        }
+
+    }
+
 
     pub fn set_moder(port_base: u32, moder_type: ModerTypes, pin: u8) {
         let gpiox_moder_offset = 0x00;
