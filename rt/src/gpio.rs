@@ -59,15 +59,16 @@ pub mod gpio_driver {
             current_register_content = ptr::read_volatile(gpiox_odr as *const u32);
         }
         // clear bits
-        current_register_content &= !(0b1 as u32) << pin;
+        // current_register_content &= !(0b1 as u32) << pin;
 
         let updated_register_content = match odr_type {
             gpio_types::OutputState::High => {
-                current_register_content |= (0b1 as u32) << pin;
+                current_register_content |= ((0b1 as u32) << pin);
                 current_register_content
             }
             gpio_types::OutputState::Low => {
-                current_register_content |= (0b0 as u32) << pin;
+                // todo: does not work
+                current_register_content |= ((0b0 as u32) << pin);
                 current_register_content
             }
         };
@@ -89,18 +90,18 @@ pub mod gpio_driver {
             current_register_content = ptr::read_volatile(gpiox_moder as *const u32);
         }
         // clear bits
-        current_register_content &= !(0b11 as u32) << pin * 2;
+        // current_register_content &= !(0b11 as u32) << pin * 2;
         
         
         let updated_register_content = match moder_type {
             // clear bit
             gpio_types::ModerTypes::InputMode => {
-                current_register_content |= (0b00 as u32) << pin * 2;
+                current_register_content |= ((0b00 as u32) << (pin * 2));
                 current_register_content
             }
             // set bit
             gpio_types::ModerTypes::GeneralPurposeOutputMode => {
-                current_register_content |= (0b01 as u32) << pin * 2;
+                current_register_content |= ((0b01 as u32) << (pin * 2));
                 current_register_content
             }
             gpio_types::ModerTypes::AlternateFunctionMode => {

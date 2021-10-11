@@ -16,7 +16,6 @@ fn foo() {
     gpio::gpio_driver::set_otyper(gpioa_base,gpio::gpio_types::OutputTypes::PushPull, 0);
     gpio::gpio_driver::set_odr(gpioa_base,gpio::gpio_types::OutputState::High, 0);
 
-    // roulette leds -> STILL BUGGY DOES NOT WORK PROPERLY!!!
     let gpioe_base = gpio::gpio_driver::get_port("E");
     gpio::gpio_driver::set_moder(gpioe_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 9);
     gpio::gpio_driver::set_otyper(gpioe_base,gpio::gpio_types::OutputTypes::PushPull, 9);
@@ -29,6 +28,7 @@ fn foo() {
     gpio::gpio_driver::set_moder(gpioe_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 14);
     gpio::gpio_driver::set_otyper(gpioe_base,gpio::gpio_types::OutputTypes::PushPull, 14);
     gpio::gpio_driver::set_odr(gpioe_base,gpio::gpio_types::OutputState::High, 14);
+
 }
 
 #[no_mangle]
