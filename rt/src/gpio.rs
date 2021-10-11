@@ -1,9 +1,9 @@
 pub mod gpio_driver {
-    let GPIOA_BASE = 0x48000000;
+    const GPIOA_BASE: u32 = 0x48000000;
 
     enum OutputTypes {
-        PUSH_PULL,
-        OPEN_DRAIN
+        PushPull,
+        OpenDrain,
     }
 
     struct GpioConfig {
@@ -11,18 +11,20 @@ pub mod gpio_driver {
         gpio_pin: u8,
         gpio_port_mode: u32,
         gpio_output_type: u32,
-        gpio_output_data_register: u32
+        gpio_output_data_register: u32,
     }
 
     // p237 -> 11.4.2 GPIO port output type register
-    fn set_otyper(port_base: u32, type: OutputTypes, pin: u8) -> u32 {
-
-        let gpiox_otyper = port_base | 0x04;
-        match type {
+    fn set_otyper(port_base: u32, output_type: OutputTypes, pin: u8) -> u32 {
+        let mut gpiox_otyper = port_base | 0x04;
+        match output_type {
             // clear bit
-            OutputTypes::PUSH_PULL => { gpiox_otyper &= !(1 as u32 << pin) },
+            OutputTypes::PushPull => {
+                gpiox_otyper &= !(1 as u32) << pin;
+            }
             // set bit
-            OutputTypes::OPEN_DRAIN => { gpiox_otyper |= (1 as u32 << pin) }
+            OutputTypes::OpenDrain => gpiox_otyper |= (1 as u32) << pin,
         }
+        123
     }
 }

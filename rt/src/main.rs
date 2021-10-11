@@ -1,9 +1,9 @@
 #![no_main]
 #![no_std]
 
+mod gpio;
 use core::panic::PanicInfo;
 use core::ptr;
-use gpio::gpio_driver;
 fn foo() {
     // turn on gpio clock
     // see p 166 -> IOPAEN
@@ -25,7 +25,7 @@ fn foo() {
         // set bit 0 & 1 to 0b01 (see p. 237, "01: General purpose output mode") first bit (LSB)
         existing_val |= (0b01) | (0b00);
 
-        ptr::write_volatile(gpioa_moder as *mut u32,existing_val);
+        ptr::write_volatile(gpioa_moder as *mut u32, existing_val);
     }
     let gpioa_otyper = gpioa_base | 0x04;
     unsafe {
