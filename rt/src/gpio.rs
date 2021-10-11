@@ -20,7 +20,7 @@ pub mod gpio_types {
 
 pub mod gpio_driver {
     use core::ptr;
-    use mod gpio_types;
+    use super::gpio_types;
 
     // p52
     const GPIOA_BASE: u32 = 0x4800_0000;
@@ -61,11 +61,11 @@ pub mod gpio_driver {
         current_register_content &= !(0b1 as u32) << pin;
 
         let updated_register_content = match odr_type {
-            OutputState::High => {
+            gpio_types::OutputState::High => {
                 current_register_content |= (0b1 as u32) << pin;
                 current_register_content
             }
-            OutputState::Low => {
+            gpio_types::OutputState::Low => {
                 current_register_content |= (0b0 as u32) << pin;
                 current_register_content
             }
@@ -77,7 +77,7 @@ pub mod gpio_driver {
     }
 
 
-    pub fn set_moder(port_base: u32, moder_type: ModerTypes, pin: u8) {
+    pub fn set_moder(port_base: u32, moder_type: gpio_types::ModerTypes, pin: u8) {
         let gpiox_moder_offset = 0x00;
         let mut gpiox_moder = port_base | gpiox_moder_offset;
 
@@ -93,20 +93,20 @@ pub mod gpio_driver {
         
         let updated_register_content = match moder_type {
             // clear bit
-            ModerTypes::InputMode => {
+            gpio_types::ModerTypes::InputMode => {
                 current_register_content |= (0b00 as u32) << pin * 2;
                 current_register_content
             }
             // set bit
-            ModerTypes::GeneralPurposeOutputMode => {
+            gpio_types::ModerTypes::GeneralPurposeOutputMode => {
                 current_register_content |= (0b01 as u32) << pin * 2;
                 current_register_content
             }
-            ModerTypes::AlternateFunctionMode => {
+            gpio_types::ModerTypes::AlternateFunctionMode => {
                 current_register_content |= (0b10 as u32) << pin * 2;
                 current_register_content
             }
-            ModerTypes::AnalogMode => {
+            gpio_types::ModerTypes::AnalogMode => {
                 current_register_content |= (0b11 as u32) << pin * 2;
                 current_register_content
             } 
@@ -118,7 +118,7 @@ pub mod gpio_driver {
     }
 
     // p237 -> 11.4.2 GPIO port output type register
-    pub fn set_otyper(port_base: u32, output_type: OutputTypes, pin: u8) {
+    pub fn set_otyper(port_base: u32, output_type: gpio_types::OutputTypes, pin: u8) {
         let gpiox_otyper_offset = 0x04;
         let mut gpiox_otyper = port_base | gpiox_otyper_offset;
 
@@ -131,12 +131,12 @@ pub mod gpio_driver {
 
         let updated_register_content = match output_type {
             // clear bit
-            OutputTypes::PushPull => {
+            gpio_types::OutputTypes::PushPull => {
                 current_register_content &= !(1 as u32) << pin;
                 current_register_content
             }
             // set bit
-            OutputTypes::OpenDrain => {
+            gpio_types::OutputTypes::OpenDrain => {
                 current_register_content |= (1 as u32) << pin;
                 current_register_content
             }

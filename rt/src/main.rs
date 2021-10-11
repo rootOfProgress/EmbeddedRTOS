@@ -13,16 +13,9 @@ fn foo() {
     // see p 54 reg boundaries
     // let gpioa_base = 0x48000000;
     let gpioa_base = gpio::gpio_driver::get_port("A");
-
-    gpio::gpio_driver::set_moder(gpioa_base,gpio::gpio_driver::ModerTypes::GeneralPurposeOutputMode, 0);
-    gpio::gpio_driver::set_otyper(gpioa_base,gpio::gpio_driver::OutputTypes::PushPull, 0);
-    gpio::gpio_driver::set_odr(gpioa_base,gpio::gpio_driver::OutputState::High, 0);
-
-
-    // let gpioa_odr = gpioa_base | 0x14;
-    // unsafe {
-    //     ptr::write_volatile(gpioa_odr as *mut u32, 1)
-    // }
+    gpio::gpio_driver::set_moder(gpioa_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 0);
+    gpio::gpio_driver::set_otyper(gpioa_base,gpio::gpio_types::OutputTypes::PushPull, 0);
+    gpio::gpio_driver::set_odr(gpioa_base,gpio::gpio_types::OutputState::High, 0);
 }
 
 #[no_mangle]
