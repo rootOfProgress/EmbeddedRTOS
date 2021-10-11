@@ -6,7 +6,7 @@ pub mod gpio_driver {
     const GPIOB_BASE: u32 = 0x4800_0400;
     const GPIOC_BASE: u32 = 0x4800_0800;
 
-    enum OutputTypes {
+    pub enum OutputTypes {
         PushPull,
         OpenDrain,
     }
@@ -77,7 +77,7 @@ pub mod gpio_driver {
     }
 
     // p237 -> 11.4.2 GPIO port output type register
-    fn set_otyper(port_base: u32, output_type: OutputTypes, pin: u8) {
+    pub fn set_otyper(port_base: u32, output_type: OutputTypes, pin: u8) {
         let gpiox_otyper_offset = 0x04;
         let mut gpiox_otyper = port_base | gpiox_otyper_offset;
 
