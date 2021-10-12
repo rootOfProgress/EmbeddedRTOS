@@ -2,6 +2,8 @@
 #![no_std]
 
 mod gpio;
+use gpio::{gpio_driver, gpio_types};
+
 use core::panic::PanicInfo;
 use core::ptr;
 fn foo() {
@@ -12,10 +14,10 @@ fn foo() {
 
     // see p 54 reg boundaries
 
-    let gpio_port_a0 = gpio::gpio_driver::GpioX::new("A", 0);
-    gpio_port_a0.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_a0.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    gpio_port_a0.set_odr(gpio::gpio_types::OutputState::High);
+    let gpio_port_a0 = gpio_driver::GpioX::new("A", 0);
+    gpio_port_a0.set_moder(gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_a0.set_otyper(gpio_types::OutputTypes::PushPull);
+    gpio_port_a0.set_odr(gpio_types::OutputState::High);
 
     let gpio_port_e9 = gpio::gpio_driver::GpioX::new("E", 9);
     gpio_port_e9.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
