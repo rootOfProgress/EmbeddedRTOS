@@ -53,7 +53,7 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(1000_u32);
+    systick::STK::set_up_systick(1_u32);
     extern "Rust" {
         fn main() -> !;
     }

@@ -1,5 +1,3 @@
-
-
 /* generall memory info; manual cortex m4 page 30 */
 MEMORY
 {
@@ -12,8 +10,8 @@ MEMORY
 }
 
 ENTRY(Reset);
-
 EXTERN(RESET_VECTOR);
+EXTERN(EXCEPTIONS);
 
 SECTIONS
 {
@@ -22,7 +20,6 @@ SECTIONS
     LONG(ORIGIN(SRAM) + LENGTH(SRAM));
     KEEP(*(.vector_table.reset_vector));
     KEEP(*(.vector_table.exceptions));
-
   } > FLASH
   PROVIDE(NMI = DefaultExceptionHandler);
   PROVIDE(HardFault = DefaultExceptionHandler);

@@ -15,6 +15,7 @@ pub mod systick {
         pub fn set_up_systick(period_ms: u32)  {
             let systick_reg = unsafe { &mut *(STK_BASE as *mut STK) };
             systick_reg.stk_load(period_ms);
+            systick_reg.stk_val_clr();
         }
         fn stk_load(&self, period_ms: u32) {
             unsafe {
@@ -29,14 +30,25 @@ pub mod systick {
             }
         }
         fn stk_val_clr(&self) {
+            let stk_load_base: u32 = 0xE000_E018;
             unsafe {
-                let mut current_register_content = ptr::read_volatile(self.stk_val as *const u32);
+                let mut existing_val = ptr::read_volatile(stk_load_base as *const u32);
         
                 // clear out first bit (LSB)
-                let updated_register_content = current_register_content & !(0x00FF_FFFF);
+                for i in 0..24 {
+                    existing_val &= !(1 << i);
+                }
         
-                ptr::write_volatile(self.stk_val as *mut u32, updated_register_content);
+                ptr::write_volatile(stk_load_base as *mut u32,existing_val);
             }
+            // unsafe {
+            //     let mut current_register_content = ptr::read_volatile(self.stk_val as *const u32);
+        
+            //     // clear out first bit (LSB)
+            //     let updated_register_content = current_register_content & !(0x00FF_FFFF);
+        
+            //     ptr::write_volatile(self.stk_val as *mut u32, updated_register_content);
+            // }
         }
         fn stk_run(&self) {
             unsafe {
