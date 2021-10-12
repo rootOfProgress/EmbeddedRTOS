@@ -4,6 +4,8 @@
 mod gpio;
 use gpio::{gpio_driver, gpio_types};
 
+mod interrupts;
+use interrupts::systick;
 use core::panic::PanicInfo;
 use core::ptr;
 fn foo() {
@@ -51,6 +53,7 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
+    systick::STK::set_up_systick(1000_u32);
     extern "Rust" {
         fn main() -> !;
     }
@@ -66,3 +69,51 @@ pub static RESET_VECTOR: unsafe extern "C" fn() -> ! = Reset;
 fn panic(_panic: &PanicInfo<'_>) -> ! {
     loop {}
 }
+
+pub union Vector {
+    reserved: u32,
+    handler: unsafe extern "C" fn(),
+}
+
+extern "C" {
+    fn NMI();
+    fn HardFault();
+    fn MemManage();
+    fn BusFault();
+    fn UsageFault();
+    fn SVCall();
+    fn PendSV();
+}
+
+#[no_mangle]
+pub extern "C" fn SysTick() {
+    // toggle_led();
+}
+
+
+#[no_mangle]
+pub extern "C" fn DefaultExceptionHandler() {
+    loop {}
+}
+
+
+#[link_section = ".vector_table.exceptions"]
+#[no_mangle]
+pub static EXCEPTIONS: [Vector; 14] = [
+    Vector { handler: NMI },
+    Vector { handler: HardFault },
+    Vector { handler: MemManage },
+    Vector { handler: BusFault },
+    Vector {
+        handler: UsageFault,
+    },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { handler: SVCall },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { handler: PendSV },
+    Vector { handler: SysTick },
+];
