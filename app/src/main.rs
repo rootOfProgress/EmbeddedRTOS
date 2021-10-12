@@ -18,7 +18,7 @@ fn main() -> ! {
     let gpioe = bus::AHB2::take().gpioe();
     gpioe.led_on(9);
 
-    let st = SystemTimer::new();
+    let st = SystemTimer::take();
     st.set_reload(0xFFFF).enable();
 
     loop {}

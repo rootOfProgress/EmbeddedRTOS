@@ -17,7 +17,7 @@ pub mod stk {
     }
 
     impl SystemTimer {
-        pub fn new() -> SystemTimer {
+        pub fn take() -> SystemTimer {
             SystemTimer {
                 p: unsafe { &mut *(SYSTICK_TIMER as *mut Systick) },
             }
