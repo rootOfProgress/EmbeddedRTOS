@@ -12,10 +12,10 @@ use dp::bus::{self};
 #[no_mangle]
 fn main() -> ! {
     
-    let rcc = bus::AHB1::new().rcc();
+    let rcc = bus::AHB1::take().rcc();
     rcc.enable_gpioe();
 
-    let gpioe = bus::AHB2::new().gpioe();
+    let gpioe = bus::AHB2::take().gpioe();
     gpioe.led_on(9);
 
     let st = SystemTimer::new();
@@ -26,6 +26,6 @@ fn main() -> ! {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    let gpioe = bus::AHB2::new().gpioe();
+    let gpioe = bus::AHB2::take().gpioe();
     gpioe.led_toggle(9);
 }

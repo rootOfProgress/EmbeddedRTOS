@@ -8,7 +8,7 @@ pub mod bus {
     }
 
     impl AHB1 {
-        pub fn new() -> AHB1 {
+        pub fn take() -> AHB1 {
             AHB1 {
                 rcc: unsafe { &mut *(RCC_AHBENR as *mut RCC) },
             }
@@ -43,7 +43,7 @@ pub mod bus {
     }
 
     impl AHB2 {
-        pub fn new() -> AHB2 {
+        pub fn take() -> AHB2 {
             AHB2 {
                 gpioe: unsafe { &mut *(GPIOE_BASE as *mut GPIOE) },
             }
