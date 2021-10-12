@@ -39,23 +39,23 @@ pub mod bus {
 
     const GPIOE_BASE: u32 = 0x4800_1000;
     pub struct AHB2 {
-        gpioe: &'static mut GPIOE,
+        gpioe: &'static mut GPIO,
     }
 
     impl AHB2 {
         pub fn take() -> AHB2 {
             AHB2 {
-                gpioe: unsafe { &mut *(GPIOE_BASE as *mut GPIOE) },
+                gpioe: unsafe { &mut *(GPIOE_BASE as *mut GPIO) },
             }
         }
 
-        pub fn gpioe(self) -> &'static mut GPIOE {
+        pub fn gpioe(self) -> &'static mut GPIO {
             self.gpioe
         }
     }
 
     #[repr(C)]
-    pub struct GPIOE {
+    pub struct GPIO {
         pub moder: u32,
         pub otyper: u32,
         pub ospeedr: u32,
@@ -67,49 +67,5 @@ pub mod bus {
         pub afrl: u32,
         pub afrh: u32,
         pub brr: u32,
-    }
-
-    impl GPIOE {
-        pub fn led_on(&mut self, led: u8) -> &mut GPIOE {
-            if (led <= 15) & (led >= 8) {
-                unsafe {
-                    write_volatile(
-                        &mut self.moder as *mut u32,
-                        read_volatile(&mut self.moder) | (0b01 as u32) << (led * 2),
-                    );
-                    write_volatile(
-                        &mut self.otyper as *mut u32,
-                        read_volatile(&mut self.otyper) & !(1 as u32) << led,
-                    );
-                    write_volatile(
-                        &mut self.odr as *mut u32,
-                        read_volatile(&mut self.odr) | (0b1 as u32) << led,
-                    );
-                }
-            }
-            self
-        }
-
-        pub fn led_toggle(&mut self, led: u8) -> &mut GPIOE {
-            if (led <= 15) & (led >= 8) {
-                let odr = unsafe { read_volatile(&mut self.odr) };
-                if odr != 0 {
-                    unsafe {
-                        write_volatile(
-                            &mut self.odr as *mut u32,
-                            read_volatile(&mut self.odr) & 0b0 << led,
-                        );
-                    }
-                } else {
-                    unsafe {
-                        write_volatile(
-                            &mut self.odr as *mut u32,
-                            read_volatile(&mut self.odr) | 0b1 << led,
-                        );
-                    }
-                }
-            }
-            self
-        }
     }
 }
