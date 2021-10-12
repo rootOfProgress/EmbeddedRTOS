@@ -33,9 +33,12 @@ fn foo() {
 
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
-    let _x = 66;
     foo();
-    loop {}
+    extern "Rust" {
+        fn main() -> !;
+    }
+
+    main()
 }
 
 #[link_section = ".vector_table.reset_vector"]
