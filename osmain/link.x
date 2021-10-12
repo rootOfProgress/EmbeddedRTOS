@@ -14,15 +14,22 @@ MEMORY
 ENTRY(Reset);
 
 EXTERN(RESET_VECTOR);
-
+EXTERN(EXCEPTIONS);
 SECTIONS
 {
   .vector_table ORIGIN(FLASH) :
   {
     LONG(ORIGIN(SRAM) + LENGTH(SRAM));
     KEEP(*(.vector_table.reset_vector));
+    KEEP(*(.vector_table.exceptions));
   } > FLASH
-
+  PROVIDE(NMI = DefaultExceptionHandler);
+  PROVIDE(HardFault = DefaultExceptionHandler);
+  PROVIDE(MemManage = DefaultExceptionHandler);
+  PROVIDE(BusFault = DefaultExceptionHandler);
+  PROVIDE(UsageFault = DefaultExceptionHandler);
+  PROVIDE(SVCall = DefaultExceptionHandler);
+  PROVIDE(PendSV = DefaultExceptionHandler);
   .text :
   {
     *(.text .text.*);
