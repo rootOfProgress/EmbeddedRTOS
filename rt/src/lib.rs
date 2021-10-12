@@ -1,6 +1,6 @@
 #![no_main]
 #![no_std]
-
+#![feature(asm)]
 mod gpio;
 use gpio::{gpio_driver, gpio_types};
 
@@ -53,7 +53,9 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(1_u32);
+    systick::setup_st_reload();
+    systick::stk_val_clr();
+    systick::stk_ctrl();
     extern "Rust" {
         fn main() -> !;
     }
@@ -87,7 +89,9 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    // toggle_led();
+    unsafe {
+        asm! {"bkpt"}
+    }
 }
 
 
