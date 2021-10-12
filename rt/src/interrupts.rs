@@ -25,17 +25,14 @@ pub mod systick {
                 let mut current_register_content = ptr::read_volatile(STK_LOAD as *const u32);
         
                 current_register_content &= !(0x00FF_FFFF);
-                current_register_content |= self.cycles_until_zero;
 
-                ptr::write_volatile(STK_LOAD as *mut u32, current_register_content);
+                ptr::write_volatile(STK_LOAD as *mut u32, (current_register_content | self.cycles_until_zero));
             }
         }
         fn stk_val_clr(&self) {
             unsafe {
                 let mut current_register_content = ptr::read_volatile(STK_VAL as *const u32);
-        
-                let updated_register_content = current_register_content & !(0x00FF_FFFF);
-                ptr::write_volatile(STK_VAL as *mut u32, current_register_content);
+                ptr::write_volatile(STK_VAL as *mut u32, current_register_content & !(0x00FF_FFFF));
             }
         }
         fn stk_run(&self) {
