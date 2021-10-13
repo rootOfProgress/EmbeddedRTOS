@@ -1,19 +1,47 @@
 pub mod bus {
-    use core::ptr::{read_volatile, write_volatile};
+    use core::{
+        mem::replace,
+        ptr::{read_volatile, write_volatile},
+    };
 
     const RCC_AHBENR: u32 = 0x4002_1000 | 0x14;
+
+    pub static mut PERIPHERALS: Peripherals = Peripherals {
+        serial: Some(Serial),
+    };
+
+    pub struct Peripherals {
+        serial: Option<Serial>,
+    }
+
+    impl Peripherals {
+        pub fn take_serial(&mut self) -> Serial {
+            let p = replace(&mut self.serial, None);
+            p.unwrap()
+        }
+    }
+
+    pub struct Serial;
+
+    impl Serial {
+        pub fn ahb1(&self) -> AHB1 {
+            AHB1 {
+                rcc: unsafe { &mut *(RCC_AHBENR as *mut RCC) },
+            }
+        }
+
+        pub fn ahb2(&self) -> AHB2 {
+            AHB2 {
+                gpioe: unsafe { &mut *(GPIOE_BASE as *mut GPIO) },
+            }
+        }
+    }
 
     pub struct AHB1 {
         rcc: &'static mut RCC,
     }
 
     impl AHB1 {
-        pub fn take() -> AHB1 {
-            AHB1 {
-                rcc: unsafe { &mut *(RCC_AHBENR as *mut RCC) },
-            }
-        }
-
         pub fn rcc(&mut self, f: fn(&mut RCC) -> &mut RCC) {
             f(self.rcc);
         }
@@ -26,7 +54,7 @@ pub mod bus {
 
     impl RCC {
         pub fn iopeen(&mut self) -> &mut RCC {
-            // IOPAEN p.166 "io port e enable"
+            // IOPEEN p.166 "io port e enable"
             unsafe {
                 write_volatile(
                     &mut self.ahbenr as *mut u32,
@@ -38,17 +66,12 @@ pub mod bus {
     }
 
     const GPIOE_BASE: u32 = 0x4800_1000;
+
     pub struct AHB2 {
         gpioe: &'static mut GPIO,
     }
 
     impl AHB2 {
-        pub fn take() -> AHB2 {
-            AHB2 {
-                gpioe: unsafe { &mut *(GPIOE_BASE as *mut GPIO) },
-            }
-        }
-
         pub fn gpioe(self) -> &'static mut GPIO {
             self.gpioe
         }
