@@ -14,8 +14,8 @@ pub mod bus {
             }
         }
 
-        pub fn rcc(self) -> &'static mut RCC {
-            self.rcc
+        pub fn rcc(&mut self, f: fn(&mut RCC) -> &mut RCC) {
+            f(self.rcc);
         }
     }
 
@@ -25,7 +25,7 @@ pub mod bus {
     }
 
     impl RCC {
-        pub fn enable_gpioe(&mut self) -> &mut RCC {
+        pub fn iopeen(&mut self) -> &mut RCC {
             // IOPAEN p.166 "io port e enable"
             unsafe {
                 write_volatile(

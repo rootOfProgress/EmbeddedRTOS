@@ -12,8 +12,8 @@ use dp::bus::{self};
 
 #[no_mangle]
 fn main() -> ! {
-    let rcc = bus::AHB1::take().rcc();
-    rcc.enable_gpioe();
+    let mut ahb1 = bus::AHB1::take();
+    ahb1.rcc(|rcc| rcc.iopeen());
 
     let gpioe = bus::AHB2::take().gpioe();
     let mut leds = handler::LED::new(gpioe);
