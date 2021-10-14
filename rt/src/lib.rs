@@ -38,17 +38,16 @@ fn foo() {
     gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
 }
 // #[link_section = ".baz"]
-#[no_mangle]
-extern "C" {
-    fn bar();
-}
+// #[no_mangle]
+// extern "C" {
+//     fn bar();
+// }
 
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
-    // NEW!
-    // Initialize RAM
+    
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
