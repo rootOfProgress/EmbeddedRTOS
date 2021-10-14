@@ -50,12 +50,16 @@ fn foo() {
     // gpio::gpio_driver::set_odr(gpioe_base,gpio::gpio_types::OutputState::High, 14);
 
 }
+// #[link_section = ".baz"]
+#[no_mangle]
+extern "C" {
+    fn bar();
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
-
     // NEW!
     // Initialize RAM
     extern "C" {

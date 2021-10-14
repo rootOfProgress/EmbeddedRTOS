@@ -13,18 +13,30 @@ fn context1() {
 }
 
 #[no_mangle]
+extern "C" {
+    fn bar(stack_ptr: *mut u32);
+}
+
+#[no_mangle]
 pub fn main() -> ! {
     let _x = 42;
     let mut usr_stack:  [*mut u32; 256];
     unsafe {
         usr_stack = core::mem::uninitialized();
         usr_stack[248] = context1 as *mut u32;
-        // unsafe {
-        //     asm! {"bkpt"}
-        // }
     }
     rt::sched::scheduler::dispatch(usr_stack[240]);
-    // let code_start: *const u32 = usr_stack.as_ptr();
-    // context1();
+    unsafe {
+        asm! {"bkpt"}
+    }
+    // unsafe {
+    //     bar(usr_stack[240]);
+    // }
+    loop {}
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub fn HardFault(_ef: *const u32) -> ! {
     loop {}
 }

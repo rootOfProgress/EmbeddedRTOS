@@ -30,6 +30,7 @@ SECTIONS
   PROVIDE(UsageFault = DefaultExceptionHandler);
   PROVIDE(SVCall = DefaultExceptionHandler);
   PROVIDE(PendSV = DefaultExceptionHandler);
+
   .text :
   {
     *(.text .text.*);
@@ -39,6 +40,7 @@ SECTIONS
   {
     *(.rodata .rodata.*);
   } > FLASH
+
 
   .bss :
   {
