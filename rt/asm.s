@@ -1,15 +1,9 @@
-.global bar
+.global dispatch_task
 .cpu cortex-m4
 .syntax unified
 .thumb
-/*
-bar:
-  mrs ip, psr
-.global bar
-.cpu cortex-m4
-.thumb
-*/
-bar:
+
+dispatch_task:
 	mrs ip, psr
   	push {R4-R11, ip,lr}
 	msr psp, r0

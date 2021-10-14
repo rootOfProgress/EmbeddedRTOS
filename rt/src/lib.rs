@@ -36,19 +36,6 @@ fn foo() {
     gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
     gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
-    // let gpioe_base = gpio::gpio_driver::get_port("E");
-    // gpio::gpio_driver::set_moder(gpioe_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 9);
-    // gpio::gpio_driver::set_otyper(gpioe_base,gpio::gpio_types::OutputTypes::PushPull, 9);
-    // gpio::gpio_driver::set_odr(gpioe_base,gpio::gpio_types::OutputState::High, 9);
-
-    // gpio::gpio_driver::set_moder(gpioe_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 11);
-    // gpio::gpio_driver::set_otyper(gpioe_base,gpio::gpio_types::OutputTypes::PushPull, 11);
-    // gpio::gpio_driver::set_odr(gpioe_base,gpio::gpio_types::OutputState::High, 11);
-
-    // gpio::gpio_driver::set_moder(gpioe_base,gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode, 14);
-    // gpio::gpio_driver::set_otyper(gpioe_base,gpio::gpio_types::OutputTypes::PushPull, 14);
-    // gpio::gpio_driver::set_odr(gpioe_base,gpio::gpio_types::OutputState::High, 14);
-
 }
 // #[link_section = ".baz"]
 #[no_mangle]
