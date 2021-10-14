@@ -40,6 +40,23 @@ SECTIONS
     *(.rodata .rodata.*);
   } > FLASH
 
+  .bss :
+  {
+    _sbss = .;
+    *(.bss .bss.*);
+    _ebss = .;
+  } > SRAM
+
+  .data : AT(ADDR(.rodata) + SIZEOF(.rodata))
+  {
+    _sdata = .;
+    *(.data .data.*);
+    _edata = .;
+  } > SRAM
+
+  _sidata = LOADADDR(.data);
+
+
   /DISCARD/ :
   {
     *(.ARM.exidx .ARM.exidx.*);
