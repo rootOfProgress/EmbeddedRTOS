@@ -14,7 +14,9 @@ dispatch_task:
 	bkpt
 	mov r0, #3
 	msr control, r0
-	pop {R4-R11, ip, lr}
+	// pop {pc}
+	// bkpt
+	pop {R4-R11, lr}
 	bkpt
 	bx lr
 
