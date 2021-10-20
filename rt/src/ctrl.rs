@@ -1,13 +1,34 @@
 pub mod control {
-    pub fn read_stack_ptr() -> u32 {
-    123        
-        // let mut foo: u32;
-        // extern "C" {
-        //     pub fn get_current_msp();
-        // }
-        // unsafe {
-        //     asm! ("mov {}, r0", out(reg) foo);
-        // }
-        // foo
+    use crate::mem;
+
+    extern "C" {
+        pub fn get_current_msp();
+        pub fn get_current_psp();
+        pub fn _save_process_context();
+
+    }
+    pub fn read_main_stack_ptr() -> u32 {
+        let mut msp_val: u32;
+        unsafe {
+            get_current_msp();
+            asm! ("mov {}, r0", out(reg) msp_val);
+            asm! {"bkpt"}
+        }
+        msp_val
+    }
+    pub fn read_process_stack_ptr() -> u32 {
+        let mut psp_val: u32;
+        unsafe {
+            get_current_psp();
+            asm! ("mov {}, r0", out(reg) psp_val);
+            asm! {"bkpt"}
+        }
+        psp_val
+    }
+    pub fn save_proc_context() {
+        unsafe {
+            _save_process_context();
+            asm! {"bkpt"}
+        }
     }
 }

@@ -6,6 +6,7 @@ use gpio::{gpio_driver, gpio_types};
 
 pub mod sched;
 pub mod ctrl;
+pub mod mem;
 use ctrl::control;
 mod interrupts;
 use interrupts::systick;
@@ -49,7 +50,11 @@ fn foo() {
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
-    
+    sched::scheduler::set_up();
+    let quax = sched::scheduler::context_switch();
+    unsafe {
+        asm! {"bkpt"}
+    }
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -98,6 +103,8 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
+    ctrl::control::save_proc_context;
+    sched::scheduler::context_switch();
     unsafe {
         asm! {"bkpt"}
     }
@@ -106,7 +113,9 @@ pub extern "C" fn SysTick() {
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
-        control::read_stack_ptr();
+        // control::read_main_stack_ptr();
+        // control::read_process_stack_ptr();
+        control::save_proc_context();
         asm! {"bkpt"}
     }
 }
