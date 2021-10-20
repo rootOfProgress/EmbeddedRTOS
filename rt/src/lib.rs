@@ -103,8 +103,9 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    ctrl::control::save_proc_context;
+    ctrl::control::save_proc_context();
     sched::scheduler::context_switch();
+    ctrl::control::load_proc_context();
     unsafe {
         asm! {"bkpt"}
     }

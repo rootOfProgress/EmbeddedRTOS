@@ -2,7 +2,7 @@
 .global get_current_msp
 .global get_current_psp
 .global _save_process_context
-.global load_process_context
+.global _load_process_context
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -16,7 +16,8 @@ dispatch_task:
 	msr control, r0
 	// pop {pc}
 	// bkpt
-	pop {R4-R11, lr}
+	pop {R4-R11}
+	push #0xFFF
 	bkpt
 	bx lr
 
@@ -33,7 +34,10 @@ _save_process_context:
 	stmdb r0!, {r4-r11}
 	msr psp, r0
 
-load_process_context:
+_load_process_context:
 	mrs r0, psp
 	ldmfd r0!, {r4-r11}
+	msr psp, r0
+
+_write_psp:
 	msr psp, r0

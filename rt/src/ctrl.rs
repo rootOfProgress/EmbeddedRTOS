@@ -5,6 +5,7 @@ pub mod control {
         pub fn get_current_msp();
         pub fn get_current_psp();
         pub fn _save_process_context();
+        pub fn _load_process_context();
 
     }
     pub fn read_main_stack_ptr() -> u32 {
@@ -30,5 +31,14 @@ pub mod control {
             _save_process_context();
             asm! {"bkpt"}
         }
+    }
+    pub fn load_proc_context() {
+        unsafe {
+            _load_process_context();
+            asm! {"bkpt"}
+        }
+    }
+    pub fn write_stack_ptr(foo: *mut u32) {
+
     }
 }
