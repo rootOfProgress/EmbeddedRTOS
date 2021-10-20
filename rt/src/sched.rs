@@ -1,6 +1,6 @@
 pub mod scheduler {
-    use crate::mem;
 
+    use crate::mem;
     const tasks_mem_location: [u32; 3] = [0x2000_0000, 0x2000_0004, 0x2000_0008];
 
     extern "C" {
