@@ -7,7 +7,7 @@ use rt::sched::scheduler;
 
 fn context1() {
     unsafe {
-        asm! {"bkpt"}
+        asm! {"svc 0"}
     }
     loop {}
 }

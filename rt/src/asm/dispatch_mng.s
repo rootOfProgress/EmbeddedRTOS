@@ -1,4 +1,5 @@
 .global dispatch_task
+.global get_current_msp
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -10,4 +11,9 @@ dispatch_task:
 	mov r0, #3
 	msr control, r0
 	pop {R4-R11, ip,lr}
+	bx lr
+
+get_current_msp:
+	bkpt
+	mrs r0, msp
 	bx lr

@@ -5,6 +5,8 @@ mod gpio;
 use gpio::{gpio_driver, gpio_types};
 
 pub mod sched;
+pub mod ctrl;
+use ctrl::control;
 mod interrupts;
 use interrupts::systick;
 use core::panic::PanicInfo;
@@ -90,7 +92,7 @@ extern "C" {
     fn MemManage();
     fn BusFault();
     fn UsageFault();
-    fn SVCall();
+    // fn SVCall();
     fn PendSV();
 }
 
@@ -101,7 +103,13 @@ pub extern "C" fn SysTick() {
     }
 }
 
-
+#[no_mangle]
+pub extern "C" fn SVCall() {
+    unsafe {
+        control::read_stack_ptr();
+        asm! {"bkpt"}
+    }
+}
 #[no_mangle]
 pub extern "C" fn DefaultExceptionHandler() {
     loop {}
