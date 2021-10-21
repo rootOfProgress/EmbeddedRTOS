@@ -7,7 +7,7 @@ pub mod control {
         pub fn __save_process_context();
         pub fn __load_process_context();
         pub fn __write_psp(foo: u32);
-
+        pub fn __exec();
     }
     pub fn read_main_stack_ptr() -> u32 {
         let mut msp_val: u32;

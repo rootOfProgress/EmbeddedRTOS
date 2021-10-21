@@ -111,12 +111,24 @@ pub extern "C" fn SysTick() {
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
-        let mut msp_val: u32;
-        ctrl::control::__get_current_msp();
-        asm! ("mov {}, r0", out(reg) msp_val);
-        ptr::write_volatile(msp_val as *mut u32, 0xfffffffd);
+        // asm!("bkpt");
+        // let mut msp_val: u32;
+        // ctrl::control::__get_current_msp();
+        // asm! ("mov {}, r0", out(reg) msp_val);
+        // let msp_ptr = msp_val as *mut u32;
+
+        // for i in -10..2 {
+        //     ptr::write_volatile(msp_ptr.offset(i) as *mut u32, 0xfffffffd);
+        // }
+
+        // ptr::write_volatile(msp_ptr.offset(2) as *mut u32, 0xfffffffd);
+        // ptr::write_volatile(msp_ptr.offset(1) as *mut u32, 0xfffffffd);
+        // ptr::write_volatile(msp_ptr.offset(-3) as *mut u32, 0xfffffffd);
+        // ptr::write_volatile(msp_ptr.offset(-2) as *mut u32, 0xfffffffd);
+        // ptr::write_volatile(msp_ptr.offset(-1) as *mut u32, 0xfffffffd);
+        // ptr::write_volatile(msp_ptr.offset(0) as *mut u32, 0xfffffffd);
+
         ctrl::control::__load_process_context();
-        asm! {"bkpt"}
     }
 }
 

@@ -4,6 +4,8 @@
 .global __save_process_context
 .global __load_process_context
 .global __write_psp
+.global __exec
+// .global __foo
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -35,12 +37,27 @@ __save_process_context:
 
 __load_process_context:
 	mrs r0, psp
-	bkpt
+	// bkpt
 	ldmfd r0!, {r4-r11}
-	bkpt
+	// bkpt
 	msr psp, r0
+	mov lr, #0xFFFFFFFD
+	bkpt
+	bx lr
+
+__exec:
+	mov r0, #3
+	msr control, r0
+	bkpt
+	pop {lr}
+	pop {lr}
+	bkpt
+	bx pc
 
 __write_psp:
 	msr psp, r0
-	bkpt
+	// bkpt
 	bx lr
+
+// __foo:
+// 	ldr lr, r0
