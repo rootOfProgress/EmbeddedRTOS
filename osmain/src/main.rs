@@ -4,6 +4,7 @@
 extern crate rt;
 use core::*;
 use rt::sched::scheduler;
+use rt::ctrl::control;
 
 #[repr(C)]
 pub struct ProcessFrame {
@@ -47,20 +48,25 @@ pub fn main() -> ! {
             lr:  0xFFFFFFFD,
             pc:  context1 as *const () as u32,
             psr: 0x21000000,
-            r4:  0,
-            r5:  0,
-            r6:  0,
-            r7:  0,
-            r8:  0,
-            r9:  0,
-            r10: 0,
-            r11: 0,
-            // lr: context1 as *const () as u32,
-            // pc: context1 as *const () as u32,
+            r4:  0x66a,
+            r5:  0x669,
+            r6:  0x668,
+            r7:  0x667,
+            r8:  0x666,
+            r9:  0x665,
+            r10: 0x664,
+            r11: 0x663
         };
-        // scheduler::dispatch_task(ptr::addr_of!(process_1.r4) as *mut u32);
+        let xy = ptr::addr_of!(process_1.r0) as u32;
+        asm! {"bkpt"}
+        control::__write_psp(ptr::addr_of!(process_1.r4) as u32);
     }
-    loop {}
+    unsafe {
+        asm! {"svc 0"}
+    }
+    loop {
+    
+    }
 }
 
 #[allow(non_snake_case)]

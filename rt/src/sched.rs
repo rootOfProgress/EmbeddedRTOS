@@ -27,8 +27,10 @@ pub mod scheduler {
                 mem::memory_handler::write(tasks_mem_location[2], 0x0000_0001);
             }
  */
+
+            let msp_val = control::read_main_stack_ptr();
             unsafe {
-                ptr::write(psp_val as *mut u32, 0xFFFFFFFD);
+                ptr::write(msp_val as *mut u32, 0xFFFFFFFD);
             }
             break;
         }

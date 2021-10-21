@@ -51,10 +51,10 @@ pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
     sched::scheduler::set_up();
-    let quax = sched::scheduler::context_switch();
-    unsafe {
-        asm! {"bkpt"}
-    }
+    // let quax = sched::scheduler::context_switch();
+    // unsafe {
+    //     asm! {"bkpt"}
+    // }
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -103,23 +103,23 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    ctrl::control::save_proc_context();
-    sched::scheduler::context_switch();
-    ctrl::control::load_proc_context();
-    unsafe {
-        asm! {"bkpt"}
-    }
+    // ctrl::control::save_proc_context();
+    // sched::scheduler::context_switch();
+    // ctrl::control::load_proc_context();
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
-        // control::read_main_stack_ptr();
-        // control::read_process_stack_ptr();
-        control::save_proc_context();
+        let mut msp_val: u32;
+        ctrl::control::__get_current_msp();
+        asm! ("mov {}, r0", out(reg) msp_val);
+        ptr::write_volatile(msp_val as *mut u32, 0xfffffffd);
+        ctrl::control::__load_process_context();
         asm! {"bkpt"}
     }
 }
+
 #[no_mangle]
 pub extern "C" fn DefaultExceptionHandler() {
     loop {}
