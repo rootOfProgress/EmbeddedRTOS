@@ -2,39 +2,26 @@
 #![no_std]
 #![feature(asm)]
 pub mod gpio;
-use gpio::{gpio_driver, gpio_types};
 
 pub mod sched;
 pub mod ctrl;
 pub mod mem;
-use ctrl::control;
 mod interrupts;
+
 use interrupts::systick;
 use core::panic::PanicInfo;
 use core::ptr;
+
 fn foo() {
     // turn on gpio clock
     // see p 166 -> IOPAEN
     let rcc_ahbenr = 0x40021000 | 0x14;
-    unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, (1 << 17 | 1 << 21)) }
+    unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
 
     // see p 54 reg boundaries
-
-    // let gpio_port_a0 = gpio_driver::GpioX::new("A", 0);
-    // gpio_port_a0.set_moder(gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    // gpio_port_a0.set_otyper(gpio_types::OutputTypes::PushPull);
-    // gpio_port_a0.set_odr(gpio_types::OutputState::High);
-
-    // let gpio_port_e9 = gpio::gpio_driver::GpioX::new("E", 9);
-    // gpio_port_e9.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    // gpio_port_e9.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    // gpio_port_e9.set_odr(gpio::gpio_types::OutputState::High);
-
     let gpio_port_e11 = gpio::gpio_driver::GpioX::new("E", 11);
     gpio_port_e11.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e11.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    // gpio_port_e11.set_odr(gpio::gpio_types::OutputState::High);
-
     let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 12);
     gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
@@ -46,7 +33,6 @@ fn foo() {
     let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 13);
     gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    // gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
 }
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
@@ -95,7 +81,6 @@ extern "C" {
     fn MemManage();
     fn BusFault();
     fn UsageFault();
-    // fn SVCall();
     fn PendSV();
     pub fn __exec();
 }
@@ -103,19 +88,14 @@ extern "C" {
 #[no_mangle]
 pub extern "C" fn SysTick() {
     sched::scheduler::context_switch();
-    // unsafe {
-        // asm!("bkpt")
-    // }
     unsafe {
         __exec();
-        // control::__exec();
-        asm!("bkpt");
     }
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
-        sched::scheduler::run(0);
+    sched::scheduler::run(0);
 }
 
 #[no_mangle]
