@@ -104,7 +104,7 @@ pub mod gpio_driver {
                 }
                 gpio_types::OutputState::Low => {
                     // todo: does not work
-                    current_register_content |= (0b0 as u32) << self.pin_number;
+                    current_register_content ^= !(0b0 as u32) << self.pin_number;
                     current_register_content
                 }
             };

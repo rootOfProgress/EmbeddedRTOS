@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 #![feature(asm)]
-mod gpio;
+pub mod gpio;
 use gpio::{gpio_driver, gpio_types};
 
 pub mod sched;
@@ -20,41 +20,31 @@ fn foo() {
 
     // see p 54 reg boundaries
 
-    let gpio_port_a0 = gpio_driver::GpioX::new("A", 0);
-    gpio_port_a0.set_moder(gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_a0.set_otyper(gpio_types::OutputTypes::PushPull);
-    gpio_port_a0.set_odr(gpio_types::OutputState::High);
+    // let gpio_port_a0 = gpio_driver::GpioX::new("A", 0);
+    // gpio_port_a0.set_moder(gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    // gpio_port_a0.set_otyper(gpio_types::OutputTypes::PushPull);
+    // gpio_port_a0.set_odr(gpio_types::OutputState::High);
 
-    let gpio_port_e9 = gpio::gpio_driver::GpioX::new("E", 9);
-    gpio_port_e9.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_e9.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    gpio_port_e9.set_odr(gpio::gpio_types::OutputState::High);
+    // let gpio_port_e9 = gpio::gpio_driver::GpioX::new("E", 9);
+    // gpio_port_e9.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    // gpio_port_e9.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    // gpio_port_e9.set_odr(gpio::gpio_types::OutputState::High);
 
     let gpio_port_e11 = gpio::gpio_driver::GpioX::new("E", 11);
     gpio_port_e11.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e11.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    gpio_port_e11.set_odr(gpio::gpio_types::OutputState::High);
+    // gpio_port_e11.set_odr(gpio::gpio_types::OutputState::High);
 
     let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 14);
     gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
+    // gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
 }
-// #[link_section = ".baz"]
-// #[no_mangle]
-// extern "C" {
-//     fn bar();
-// }
-
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(1000);
+    systick::STK::set_up_systick(300);
     sched::scheduler::set_up();
-    // let quax = sched::scheduler::context_switch();
-    // unsafe {
-    //     asm! {"bkpt"}
-    // }
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -103,32 +93,13 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    // ctrl::control::save_proc_context();
-    // sched::scheduler::context_switch();
-    // ctrl::control::load_proc_context();
+    sched::scheduler::context_switch();
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
-        // asm!("bkpt");
-        // let mut msp_val: u32;
-        // ctrl::control::__get_current_msp();
-        // asm! ("mov {}, r0", out(reg) msp_val);
-        // let msp_ptr = msp_val as *mut u32;
-
-        // for i in -10..2 {
-        //     ptr::write_volatile(msp_ptr.offset(i) as *mut u32, 0xfffffffd);
-        // }
-
-        // ptr::write_volatile(msp_ptr.offset(2) as *mut u32, 0xfffffffd);
-        // ptr::write_volatile(msp_ptr.offset(1) as *mut u32, 0xfffffffd);
-        // ptr::write_volatile(msp_ptr.offset(-3) as *mut u32, 0xfffffffd);
-        // ptr::write_volatile(msp_ptr.offset(-2) as *mut u32, 0xfffffffd);
-        // ptr::write_volatile(msp_ptr.offset(-1) as *mut u32, 0xfffffffd);
-        // ptr::write_volatile(msp_ptr.offset(0) as *mut u32, 0xfffffffd);
-        sched::scheduler::context_switch();
-        // ctrl::control::__load_process_context();
+        sched::scheduler::run(0);
     }
 }
 

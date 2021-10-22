@@ -34,13 +34,12 @@ __save_process_context:
 	mrs r0, psp
 	stmdb r0!, {r4-r11}
 	msr psp, r0
+	bx lr
 
 __load_process_context:
 	mrs r0, psp
 	ldmfd r0!, {r4-r11}
 	msr psp, r0
-	// mov lr, #0xFFFFFFFD
-	// bkpt
 	bx lr
 
 __exec:
