@@ -51,7 +51,7 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(8);
+    systick::STK::set_up_systick(300);
     sched::scheduler::set_up();
     extern "C" {
         static mut _sbss: u8;
@@ -109,6 +109,7 @@ pub extern "C" fn SysTick() {
     unsafe {
         __exec();
         // control::__exec();
+        asm!("bkpt");
     }
 }
 

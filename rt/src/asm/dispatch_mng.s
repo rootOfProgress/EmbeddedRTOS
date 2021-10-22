@@ -47,10 +47,12 @@ __msp_workaround:
 	pop {r0, r1}
 	bx lr
 
-__exec:
-	mov lr, #0xFFFFFFFD
-	add sp, #8
-
 __write_psp:
 	msr psp, r0
 	bx lr
+__exec:
+	mov lr, #0xFFFFFFFD
+	// mov r0, #0xFFFFFFFD
+	add sp, #8
+	// str r0, [sp], #-8
+	// bx lr
