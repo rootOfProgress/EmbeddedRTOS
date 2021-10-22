@@ -51,7 +51,7 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(20);
+    systick::STK::set_up_systick(8);
     sched::scheduler::set_up();
     extern "C" {
         static mut _sbss: u8;
@@ -97,18 +97,24 @@ extern "C" {
     fn UsageFault();
     // fn SVCall();
     fn PendSV();
+    pub fn __exec();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
     sched::scheduler::context_switch();
+    // unsafe {
+        // asm!("bkpt")
+    // }
+    unsafe {
+        __exec();
+        // control::__exec();
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
-    unsafe {
         sched::scheduler::run(0);
-    }
 }
 
 #[no_mangle]

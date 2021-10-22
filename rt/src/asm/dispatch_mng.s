@@ -5,6 +5,7 @@
 .global __load_process_context
 .global __write_psp
 .global __exec
+.global __msp_workaround
 // .global __foo
 .cpu cortex-m4
 .syntax unified
@@ -42,14 +43,14 @@ __load_process_context:
 	msr psp, r0
 	bx lr
 
+__msp_workaround:
+	pop {r0, r1}
+	bx lr
+
 __exec:
 	mov lr, #0xFFFFFFFD
-	bx lr
+	add sp, #8
 
 __write_psp:
 	msr psp, r0
-	// bkpt
 	bx lr
-
-// __foo:
-// 	ldr lr, r0

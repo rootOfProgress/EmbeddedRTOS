@@ -26,10 +26,11 @@ pub mod scheduler {
             let task_addr = mem::memory_handler::read(tasks_mem_location[task_number as usize]);
             control::__write_psp(task_addr);
             control::__load_process_context();
-            unsafe {
-                // asm!("bkpt")
-            };
-            control::__exec();
+            // control::__msp_workaround();
+            // asm!("bkpt");
+            // control::__exec();
+            // asm!("bkpt");
+
         }
     }
 
