@@ -34,12 +34,31 @@ fn deschedule() {
     }
 }
 
+fn context4() {
+    loop {
+        unsafe {
+            let mut foo = ptr::read_volatile(0x4800_1014 as *const u32);
+            foo = 0x0000_0000;
+            foo |= (0b1 as u32) << 12;
+            ptr::write_volatile(0x4800_1014 as *mut u32, foo);
+        }
 
+    }
+}
+
+fn context3() {
+    loop {
+        unsafe {
+            let mut foo = ptr::read_volatile(0x4800_1014 as *const u32);
+            foo = 0x0000_0000;
+            foo |= (0b1 as u32) << 13;
+            ptr::write_volatile(0x4800_1014 as *mut u32, foo);
+        }
+
+    }
+}
 
 fn context2() {
-    // unsafe {
-    //     asm! {"bkpt"}
-    // }
     loop {
         unsafe {
             let mut foo = ptr::read_volatile(0x4800_1014 as *const u32);
@@ -51,9 +70,7 @@ fn context2() {
     }
 }
 fn context1() {
-    // unsafe {
-    //     asm! {"bkpt"}
-    // }
+
     loop {
         unsafe {
             let mut foo = ptr::read_volatile(0x4800_1014 as *const u32);
@@ -87,7 +104,6 @@ pub fn main() -> ! {
             psr: 0x21000000,
             stuff: mem::MaybeUninit::uninit().assume_init(),
         };
-        let xy = ptr::addr_of!(process_1.r4) as u32;
         scheduler::init(0, ptr::addr_of!(process_1.r4) as u32);
 
         let mut process_2 = ProcessFrame {
@@ -110,8 +126,51 @@ pub fn main() -> ! {
             stuff: mem::MaybeUninit::uninit().assume_init(),
 
         };
-        let xy = ptr::addr_of!(process_2.r4) as u32;
         scheduler::init(1, ptr::addr_of!(process_2.r4) as u32);
+
+        let mut process_3 = ProcessFrame {
+            r4:  0x66a,
+            r5:  0x669,
+            r6:  0x668,
+            r7:  0x667,
+            r8:  0x666,
+            r9:  0x665,
+            r10: 0x664,
+            r11: 0x663,
+            r0:  0x110,
+            r1:  0,
+            r2:  0,
+            r3:  0,
+            r12: 0x9978a,
+            lr:  deschedule as *const () as u32,
+            pc:  context3 as *const () as u32,
+            psr: 0x21000000,
+            stuff: mem::MaybeUninit::uninit().assume_init(),
+
+        };
+        scheduler::init(2, ptr::addr_of!(process_3.r4) as u32);
+
+        let mut process_4 = ProcessFrame {
+            r4:  0x66a,
+            r5:  0x669,
+            r6:  0x668,
+            r7:  0x667,
+            r8:  0x666,
+            r9:  0x665,
+            r10: 0x664,
+            r11: 0x663,
+            r0:  0x110,
+            r1:  0,
+            r2:  0,
+            r3:  0,
+            r12: 0x9978a,
+            lr:  deschedule as *const () as u32,
+            pc:  context4 as *const () as u32,
+            psr: 0x21000000,
+            stuff: mem::MaybeUninit::uninit().assume_init(),
+
+        };
+        scheduler::init(3, ptr::addr_of!(process_4.r4) as u32);
     }
     unsafe {
         asm! {"svc 0"}

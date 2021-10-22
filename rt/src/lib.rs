@@ -35,7 +35,15 @@ fn foo() {
     gpio_port_e11.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
     // gpio_port_e11.set_odr(gpio::gpio_types::OutputState::High);
 
+    let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 12);
+    gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+
     let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 14);
+    gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+
+    let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 13);
     gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
     // gpio_port_e14.set_odr(gpio::gpio_types::OutputState::High);
@@ -43,7 +51,7 @@ fn foo() {
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
-    systick::STK::set_up_systick(300);
+    systick::STK::set_up_systick(20);
     sched::scheduler::set_up();
     extern "C" {
         static mut _sbss: u8;
