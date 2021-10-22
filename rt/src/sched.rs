@@ -13,26 +13,44 @@ pub mod scheduler {
         let current_task = mem::memory_handler::write(tasks_mem_location[2], 0x0000_0001);
     }
 
-    pub fn context_switch() {
-        let current_task = mem::memory_handler::read(tasks_mem_location[2]);
-        let psp_val = control::read_process_stack_ptr();
-
-        loop {
-            // later ..
-/*             if current_task == 0x1 {
-                // go to 2nd...
-                mem::memory_handler::write(tasks_mem_location[2], 0x0000_0002);
-            } else {
-                // go to 1st...
-                mem::memory_handler::write(tasks_mem_location[2], 0x0000_0001);
-            }
- */
-
-            let msp_val = control::read_main_stack_ptr();
-            unsafe {
-                ptr::write(msp_val as *mut u32, 0xFFFFFFFD);
-            }
-            break;
+    pub fn init(task_number: usize, addr: u32) {
+        unsafe {
+            
+            mem::memory_handler::write(tasks_mem_location[task_number], addr)
         }
+    }
+
+    fn run(task_number: usize) {
+        unsafe {
+
+            let task_addr = mem::memory_handler::read(tasks_mem_location[task_number]);
+            control::__write_psp(task_addr);
+            control::__load_process_context();
+            control::__exec();
+        }
+    }
+
+    pub fn context_switch() {
+        run(0);
+//         let current_task = mem::memory_handler::read(tasks_mem_location[2]);
+//         let psp_val = control::read_process_stack_ptr();
+
+//         loop {
+//             // later ..
+// /*             if current_task == 0x1 {
+//                 // go to 2nd...
+//                 mem::memory_handler::write(tasks_mem_location[2], 0x0000_0002);
+//             } else {
+//                 // go to 1st...
+//                 mem::memory_handler::write(tasks_mem_location[2], 0x0000_0001);
+//             }
+//  */
+
+//             let msp_val = control::read_main_stack_ptr();
+//             unsafe {
+//                 ptr::write(msp_val as *mut u32, 0xFFFFFFFD);
+//             }
+//             break;
+//         }
     }
 }

@@ -127,8 +127,8 @@ pub extern "C" fn SVCall() {
         // ptr::write_volatile(msp_ptr.offset(-2) as *mut u32, 0xfffffffd);
         // ptr::write_volatile(msp_ptr.offset(-1) as *mut u32, 0xfffffffd);
         // ptr::write_volatile(msp_ptr.offset(0) as *mut u32, 0xfffffffd);
-
-        ctrl::control::__load_process_context();
+        sched::scheduler::context_switch();
+        // ctrl::control::__load_process_context();
     }
 }
 

@@ -63,7 +63,8 @@ pub fn main() -> ! {
         };
         let xy = ptr::addr_of!(process_1.r4) as u32;
         // asm! {"bkpt"}
-        control::__write_psp(ptr::addr_of!(process_1.r4) as u32);
+        scheduler::init(0, ptr::addr_of!(process_1.r4) as u32);
+        // control::__write_psp(ptr::addr_of!(process_1.r4) as u32);
     }
     unsafe {
         asm! {"svc 0"}

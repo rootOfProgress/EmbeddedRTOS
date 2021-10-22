@@ -37,22 +37,15 @@ __save_process_context:
 
 __load_process_context:
 	mrs r0, psp
-	// bkpt
 	ldmfd r0!, {r4-r11}
-	// bkpt
 	msr psp, r0
-	mov lr, #0xFFFFFFFD
-	bkpt
+	// mov lr, #0xFFFFFFFD
+	// bkpt
 	bx lr
 
 __exec:
-	mov r0, #3
-	msr control, r0
-	bkpt
-	pop {lr}
-	pop {lr}
-	bkpt
-	bx pc
+	mov lr, #0xFFFFFFFD
+	bx lr
 
 __write_psp:
 	msr psp, r0
