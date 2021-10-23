@@ -3,9 +3,9 @@ pub mod scheduler {
     use crate::ctrl::control;
     use crate::mem;
 
-    const TASK_CNT: u32 = 4;
+    const TASK_CNT: u32 = 1;
     const TASK_COUNTER_ID: usize = 4;
-    const TASK_ORDER: [u32; TASK_CNT as usize] = [1, 2, 3, 0];
+    // const TASK_ORDER: [u32; TASK_CNT as usize] = [1, 2, 3, 0];
     const TASKS_MEM_LOCATION: [u32; 5] = [
         0x2000_0000,
         0x2000_0004,
@@ -31,7 +31,8 @@ pub mod scheduler {
     }
 
     fn next(current: u32) -> u32 {
-        TASK_ORDER[current as usize]
+        // TASK_ORDER[current as usize]
+        0
     }
 
     pub fn context_switch() {

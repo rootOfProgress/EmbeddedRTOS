@@ -35,5 +35,9 @@ __write_psp:
 	bx lr
 
 __exec:
-	mov lr, #0xFFFFFFFD
-	add sp, #8
+	pop {r0, r1}
+	mov r1, #0xFFFFFFFD
+	str r1, [sp, #8]
+	push {r1}
+	push {r0}
+	// bkpt

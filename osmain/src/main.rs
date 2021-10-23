@@ -58,56 +58,64 @@ fn deschedule() {
 
 fn context4() {
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 12;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        // unsafe {
+        //     let mut reg_content = 0x0000_0000;
+        //     reg_content |= (0b1_u32) << 12;
+        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 
 fn context3() {
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 13;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        // unsafe {
+        //     let mut reg_content = 0x0000_0000;
+        //     reg_content |= (0b1_u32) << 13;
+        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 
 fn context2() {
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 14;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        // unsafe {
+        //     let mut reg_content = 0x0000_0000;
+        //     reg_content |= (0b1_u32) << 14;
+        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 fn context1() {
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 11;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        // unsafe {
+        //     let mut reg_content = 0x0000_0000;
+        //     reg_content |= (0b1_u32) << 11;
+        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 
 #[no_mangle]
 pub fn main() -> ! {
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
-    let process_2 = ProcessFrame::new(context2 as *const () as u32);
-    let process_3 = ProcessFrame::new(context3 as *const () as u32);
-    let process_4 = ProcessFrame::new(context4 as *const () as u32);
+    // let process_2 = ProcessFrame::new(context2 as *const () as u32);
+    // let process_3 = ProcessFrame::new(context3 as *const () as u32);
+    // let process_4 = ProcessFrame::new(context4 as *const () as u32);
 
     scheduler::init(0, ptr::addr_of!(process_1.r4) as u32);
-    scheduler::init(1, ptr::addr_of!(process_2.r4) as u32);
-    scheduler::init(2, ptr::addr_of!(process_3.r4) as u32);
-    scheduler::init(3, ptr::addr_of!(process_4.r4) as u32);
+    // scheduler::init(1, ptr::addr_of!(process_2.r4) as u32);
+    // scheduler::init(2, ptr::addr_of!(process_3.r4) as u32);
+    // scheduler::init(3, ptr::addr_of!(process_4.r4) as u32);
+    unsafe {
+        asm!("
+        mov r0, 0xF0
+        mov r1, 0xF1
+        mov r2, 0xF2
+        mov r3, 0xF3  
+        ");
+        
+    }
     scheduler::run(0);
-
     loop {}
 }
 
