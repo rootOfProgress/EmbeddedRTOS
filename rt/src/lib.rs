@@ -3,14 +3,15 @@
 #![feature(asm)]
 pub mod gpio;
 
-pub mod sched;
 pub mod ctrl;
-pub mod mem;
 mod interrupts;
+pub mod mem;
+pub mod sched;
 
-use interrupts::systick;
 use core::panic::PanicInfo;
 use core::ptr;
+use interrupts::systick;
+use sched::scheduler::subroutine;
 
 fn foo() {
     // turn on gpio clock
@@ -83,17 +84,49 @@ extern "C" {
     fn UsageFault();
     fn PendSV();
     pub fn __exec();
+    pub fn __get_msp_entry();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    sched::scheduler::context_switch();
     // unsafe {
-        // asm!("bkpt");
+    // __get_msp_entry();
+    // asm! ("mov {}, r0", out(reg) msp_val);
     // }
+    // sched::scheduler::context_switch();
     unsafe {
-        __exec();
+        __get_msp_entry();
+        let msp_val: u32;
+        asm! ("mov {}, r0", out(reg) msp_val);
+        sched::scheduler::set_msp_entry(msp_val);
     }
+        // let qux = sched::scheduler::get_msp_entry();
+    unsafe {
+        asm!("bkpt");
+        asm!(
+            "
+        bkpt
+        push {{R4-R11}}    
+        bkpt"
+        );
+    }
+    
+
+    // let f = 123;
+    // let f1 = 103;
+    // let f2 = 183;
+    sched::scheduler::subroutine(0);
+    unsafe {
+        asm!(
+            "
+        mov R4, #0x666
+        pop {{R4-R11}}
+        bkpt"
+        );
+    }
+    // unsafe {
+    //     __exec();
+    // }
 }
 
 #[no_mangle]
@@ -105,7 +138,6 @@ pub extern "C" fn SVCall() {
 pub extern "C" fn DefaultExceptionHandler() {
     loop {}
 }
-
 
 #[link_section = ".vector_table.exceptions"]
 #[no_mangle]

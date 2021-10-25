@@ -4,6 +4,7 @@
 .global __load_process_context
 .global __write_psp
 .global __exec
+.global __get_msp_entry
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -15,6 +16,10 @@ __get_current_msp:
 
 __get_current_psp:
 	mrs r0, psp
+	bx lr
+
+__get_msp_entry:
+	mov r0, r7
 	bx lr
 
 __save_process_context:
