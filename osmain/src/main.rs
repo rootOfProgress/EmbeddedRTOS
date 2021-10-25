@@ -139,8 +139,18 @@ pub fn main() -> ! {
         "
         );
     }
-    scheduler::run(0);
-    loop {}
+    // scheduler::run(0);
+    loop {
+        unsafe {
+            let mut reg_content = 0x0000_0000;
+            // for i in 0..31 {
+
+            //     reg_content |= (0b1_u32) << i as u32;
+            // }
+            reg_content |= (0b1_u32) << 13;
+            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        }
+    }
 }
 
 #[allow(non_snake_case)]

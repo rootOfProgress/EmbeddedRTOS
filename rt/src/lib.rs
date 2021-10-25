@@ -40,6 +40,7 @@ pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
     sched::scheduler::set_up();
+    // sched::scheduler::add_to_vec(addr, mode, state)
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -84,6 +85,7 @@ extern "C" {
     fn UsageFault();
     fn PendSV();
     pub fn __exec(x: u32);
+    pub fn __set_exec_mode(y: u32);
     pub fn __get_msp_entry();
 }
 
@@ -104,8 +106,10 @@ pub extern "C" fn SysTick() {
                     "
         );
     }
-    sched::scheduler::context_switch();
-
+    // sched::scheduler::context_switch();
+    unsafe {
+        // asm!("bkpt");
+    }
     unsafe {
         asm!(
             "
@@ -118,6 +122,11 @@ pub extern "C" fn SysTick() {
     // }
     let y = sched::scheduler::get_msp_entry();
     unsafe {
+        __set_exec_mode(0xFFFF_FFF9);
+        if !true {
+        } else {
+            // __set_exec_mode(0xFFFF_FFF9);
+        }
         __exec(y);
     }
 }

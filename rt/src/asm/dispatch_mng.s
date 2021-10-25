@@ -5,6 +5,7 @@
 .global __write_psp
 .global __exec
 .global __get_msp_entry
+.global __set_exec_mode
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -39,13 +40,17 @@ __write_psp:
 	msr psp, r0
 	bx lr
 
+__set_exec_mode:
+	mov r2, r0
+	bx lr
+
 __exec:
 	// bkpt
 	// sub r4, 
-	mrs r2, msp
-	sub r4, r0, r2
+	mrs r3, msp
+	sub r4, r0, r3
 	add r4, #0x04
 	// bkpt
-	mov r1, #0xFFFFFFFD
+	mov r1, r2
 	str r1, [sp, r4]
 	// bkpt
