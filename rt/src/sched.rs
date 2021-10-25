@@ -4,7 +4,7 @@ pub mod scheduler {
     use crate::mem;
     use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
-    static is_in_user_mode: AtomicBool = AtomicBool::new(false);
+    static is_in_user_mode: AtomicBool = AtomicBool::new(true);
     static msp_entry: AtomicU32 = AtomicU32::new(0x0000_0000);
     
     const TASK_CNT: u32 = 4;

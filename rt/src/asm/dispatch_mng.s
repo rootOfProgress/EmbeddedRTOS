@@ -40,6 +40,12 @@ __write_psp:
 	bx lr
 
 __exec:
+	// bkpt
+	// sub r4, 
+	mrs r2, msp
+	sub r4, r0, r2
+	add r4, #0x04
+	// bkpt
 	mov r1, #0xFFFFFFFD
-	str r1, [sp, #4]
-	bkpt
+	str r1, [sp, r4]
+	// bkpt

@@ -83,50 +83,43 @@ extern "C" {
     fn BusFault();
     fn UsageFault();
     fn PendSV();
-    pub fn __exec();
+    pub fn __exec(x: u32);
     pub fn __get_msp_entry();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    // unsafe {
-    // __get_msp_entry();
-    // asm! ("mov {}, r0", out(reg) msp_val);
-    // }
-    // sched::scheduler::context_switch();
     unsafe {
         __get_msp_entry();
         let msp_val: u32;
         asm! ("mov {}, r0", out(reg) msp_val);
         sched::scheduler::set_msp_entry(msp_val);
     }
-        // let qux = sched::scheduler::get_msp_entry();
+    // let qux = sched::scheduler::get_msp_entry();
     unsafe {
-        asm!("bkpt");
+        //     // asm!("bkpt");
         asm!(
             "
-        bkpt
-        push {{R4-R11}}    
-        bkpt"
+                    push {{R4-R11}}    
+                    "
         );
     }
-    
+    sched::scheduler::context_switch();
 
-    // let f = 123;
-    // let f1 = 103;
-    // let f2 = 183;
-    sched::scheduler::subroutine(0);
     unsafe {
         asm!(
             "
-        mov R4, #0x666
         pop {{R4-R11}}
-        bkpt"
+        "
         );
     }
     // unsafe {
-    //     __exec();
+    //     asm!("bkpt");
     // }
+    let y = sched::scheduler::get_msp_entry();
+    unsafe {
+        __exec(y);
+    }
 }
 
 #[no_mangle]
