@@ -11,7 +11,6 @@ pub mod sched;
 use core::panic::PanicInfo;
 use core::ptr;
 use interrupts::systick;
-use sched::scheduler::subroutine;
 
 fn foo() {
     // turn on gpio clock
@@ -98,37 +97,37 @@ pub extern "C" fn SysTick() {
         sched::scheduler::set_msp_entry(msp_val);
     }
     // let qux = sched::scheduler::get_msp_entry();
-    unsafe {
-        //     // asm!("bkpt");
-        asm!(
-            "
-                    push {{R4-R11}}    
-                    "
-        );
-    }
-    // sched::scheduler::context_switch();
+    // unsafe {
+    //     //     // asm!("bkpt");
+    //     asm!(
+    //         "
+    //                 push {{R4-R11}}    
+    //                 "
+    //     );
+    // }
+    sched::scheduler::context_switch();
     unsafe {
         // asm!("bkpt");
     }
-    unsafe {
-        asm!(
-            "
-        pop {{R4-R11}}
-        "
-        );
-    }
+    // unsafe {
+    //     asm!(
+    //         "
+    //     pop {{R4-R11}}
+    //     "
+    //     );
+    // }
     // unsafe {
     //     asm!("bkpt");
     // }
-    let y = sched::scheduler::get_msp_entry();
-    unsafe {
-        __set_exec_mode(0xFFFF_FFF9);
-        if !true {
-        } else {
-            // __set_exec_mode(0xFFFF_FFF9);
-        }
-        __exec(y);
-    }
+    // let y = sched::scheduler::get_msp_entry();
+    // unsafe {
+    //     __set_exec_mode(0xFFFF_FFF9);
+    //     if !true {
+    //     } else {
+    //         // __set_exec_mode(0xFFFF_FFF9);
+    //     }
+    //     __exec(y);
+    // }
 }
 
 #[no_mangle]

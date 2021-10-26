@@ -115,11 +115,15 @@ pub fn main() -> ! {
     let process_2 = ProcessFrame::new(context2 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32);
     let process_4 = ProcessFrame::new(context4 as *const () as u32);
-// 
-    scheduler::init(0, ptr::addr_of!(process_1.r4) as u32);
-    scheduler::init(1, ptr::addr_of!(process_2.r4) as u32);
-    scheduler::init(2, ptr::addr_of!(process_3.r4) as u32);
-    scheduler::init(3, ptr::addr_of!(process_4.r4) as u32);
+
+    // todo: pass addr!!!
+    scheduler::insert_task(ptr::addr_of!(process_1.r4) as u32);
+    scheduler::insert_task(ptr::addr_of!(process_2.r4) as u32);
+    scheduler::insert_task(ptr::addr_of!(process_3.r4) as u32);
+    scheduler::insert_task(ptr::addr_of!(process_4.r4) as u32);
+    // unsafe {
+    //     asm! {"bkpt"}
+    // }
     unsafe {
         asm!(
             "
