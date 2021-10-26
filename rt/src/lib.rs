@@ -10,6 +10,7 @@ pub mod sched;
 
 use core::panic::PanicInfo;
 use core::ptr;
+// use ctrl::control::__exec;
 use interrupts::systick;
 
 fn foo() {
@@ -91,6 +92,16 @@ extern "C" {
 #[no_mangle]
 pub extern "C" fn SysTick() {
     unsafe {
+        // asm! {"bkpt"}
+    }
+    if sched::scheduler::running() {
+        unsafe {
+            // asm! {"bkpt"}
+        }
+        ctrl::control::save_proc_context();
+        sched::scheduler::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
+    }
+    unsafe {
         __get_msp_entry();
         let msp_val: u32;
         asm! ("mov {}, r0", out(reg) msp_val);
@@ -105,19 +116,23 @@ pub extern "C" fn SysTick() {
     //                 "
     //     );
     // }
+
     sched::scheduler::context_switch();
-    unsafe {
-        // asm!("bkpt");
+    if sched::scheduler::is_usr() {
+        unsafe {
+            __set_exec_mode(0xFFFF_FFFD);
+            __exec(sched::scheduler::get_msp_entry());
+            // asm!("bkpt");
+            ctrl::control::__load_process_context();
+        }
     }
+        // asm!("bkpt");
     // unsafe {
     //     asm!(
     //         "
     //     pop {{R4-R11}}
     //     "
     //     );
-    // }
-    // unsafe {
-    //     asm!("bkpt");
     // }
     // let y = sched::scheduler::get_msp_entry();
     // unsafe {

@@ -51,6 +51,6 @@ __exec:
 	sub r4, r0, r3
 	add r4, #0x04
 	// bkpt
-	mov r1, r2
+	mov r1, #0xfffffffd
 	str r1, [sp, r4]
-	// bkpt
+	bx lr

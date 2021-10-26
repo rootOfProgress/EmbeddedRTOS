@@ -4,7 +4,8 @@ pub mod scheduler {
     use crate::mem;
     use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
-    static is_in_user_mode: AtomicBool = AtomicBool::new(false);
+    static is_user_task: AtomicBool = AtomicBool::new(false);
+    static usr_is_running: AtomicBool = AtomicBool::new(false);
     static msp_entry: AtomicU32 = AtomicU32::new(0x0000_0000);
 
     const TASK_CNT: u32 = 4;
@@ -45,6 +46,12 @@ pub mod scheduler {
         0x2000_0018,
     ];
 
+    pub fn is_usr() -> bool {
+        is_user_task.load(Ordering::Relaxed)
+    } 
+    pub fn running() -> bool {
+        usr_is_running.load(Ordering::Relaxed)
+    } 
     fn get_vec_meta() -> (u8, u8, u8, u8) {
         let vec_meta = mem::memory_handler::read(VECTOR_START);
         (
@@ -71,12 +78,32 @@ pub mod scheduler {
         }
     }
 
-    fn update_tasks_ptr(addr: u32) {
+    pub fn update_tasks_ptr(addr: u32) {
+        if addr == 0x0000_0000 {
+            return;
+        }
+        unsafe {
+            // asm!("bkpt");
+        }
         let vec_meta = get_vec_meta();
-        mem::memory_handler::write((DATA_START + ADR_OFFSET) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32), addr);
+        let mut foo = vec_meta.2 as u32;
+        if foo == 0 {
+            foo = 3;
+        } else {
+            foo -= 1;
+        }
+        mem::memory_handler::write((DATA_START + ADR_OFFSET) + ((foo as u32) * BLOCK_SIZE as u32), addr);
     }
 
-    fn next() -> u32 {
+    fn current_task() -> (u32, u32) {
+        let vec_meta = get_vec_meta();
+        let task_adr = mem::memory_handler::read((DATA_START + ADR_OFFSET) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32));
+        let task_meta = mem::memory_handler::read((DATA_START) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32));
+        let task_mode = task_meta & 0x0000_FFFF;
+        (task_adr, task_mode)
+    }
+
+    fn next_task() {
         let vec_meta = get_vec_meta();
         let vec_meta_blk: u32 = mem::memory_handler::read(VECTOR_START);
         // size == current, go to 0
@@ -88,16 +115,13 @@ pub mod scheduler {
                 vec_meta_blk & !(0xFF00) | (((vec_meta.2 + 0x01) as u32) << 8) as u32,
             );
         }
-
-        let vec_meta = get_vec_meta();
-        mem::memory_handler::read((DATA_START + ADR_OFFSET) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32))
     }
 
     pub fn insert_task(addr: u32) {
         let vec_meta = get_vec_meta();
         let addr_task_meta = (BLOCK_SIZE * vec_meta.3) as u32 + DATA_START;
         let addr_task_ptr = addr_task_meta + 0x04;
-        mem::memory_handler::write(addr_task_meta, 0x00FF00FF);
+        mem::memory_handler::write(addr_task_meta, 0x00FFFFFF);
         mem::memory_handler::write(addr_task_ptr, addr);
         write_meta((vec_meta.3 + 0x01) as u32, VecMeta::SIZE);
     }
@@ -125,15 +149,32 @@ pub mod scheduler {
         mem::memory_handler::write(TASKS_MEM_LOCATION[task_number], addr)
     }
 
-    pub fn run(task_number: u32) {
+    pub fn run(task_addr: u32) {
         unsafe {
-            let task_addr = mem::memory_handler::read(TASKS_MEM_LOCATION[task_number as usize]);
+            // let task_addr = mem::memory_handler::read(TASKS_MEM_LOCATION[task_number as usize]);
             control::__write_psp(task_addr);
-            control::__load_process_context();
+            // control::__load_process_context();
         }
     }
 
     pub fn context_switch() {
+        // mem::memory_handler::write(
+        //     TASKS_MEM_LOCATION[current_task as usize],
+        //     control::read_process_stack_ptr(),
+        // );
+        // update_tasks_ptr(control::read_process_stack_ptr());
+        // schedule current
+        // control::save_proc_context();
+        let (task_addr, task_mode) = current_task();
+        if task_mode == 0xFFFF {
+            is_user_task.store(true, Ordering::Relaxed);
+            usr_is_running.store(true, Ordering::Relaxed);
+            run(task_addr);
+        } else {
+            is_user_task.store(false, Ordering::Relaxed);
+        }
+        next_task();
+        let n = get_vec_meta();
         // save usr state only if a usr process runs
         // if is_in_user_mode.load(Ordering::Relaxed) {
         //     control::save_proc_context();
@@ -158,11 +199,9 @@ pub mod scheduler {
         // mem::memory_handler::write(TASKS_MEM_LOCATION[TASK_COUNTER_ID], next(current_task));
 
         // set psp and pop of user registers
-        let n = next();
-        update_tasks_ptr(get_msp_entry());
-        unsafe {
-            asm!("bkpt");
-        }
+        // let n = next();
+        // update_tasks_ptr(get_msp_entry());
+
         // run(next());
     }
 }

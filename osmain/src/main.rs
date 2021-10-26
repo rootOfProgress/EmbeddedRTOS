@@ -38,9 +38,9 @@ impl ProcessFrame {
             r10: 0x664,
             r11: 0x663,
             r0: 0x110,
-            r1: 0,
-            r2: 0,
-            r3: 0,
+            r1: 0xAA,
+            r2: 0xBB,
+            r3: 0xCC,
             r12: 0x9978a,
             lr: deschedule as *const () as u32,
             pc: target,
@@ -86,20 +86,6 @@ fn context2() {
     }
 }
 fn context1() {
-    unsafe {
-        asm!(
-            "
-        mov r4, 0xAF4
-        mov r5, 0xAF5
-        mov r6, 0xAF6
-        mov r7, 0xAF7 
-        mov r8, 0xAF8
-        mov r9, 0xAF9
-        mov r10, 0xAFA 
-        mov r11, 0xAFB
-        "
-        );
-    }
     loop {
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -143,14 +129,9 @@ pub fn main() -> ! {
         "
         );
     }
-    // scheduler::run(0);
     loop {
         unsafe {
             let mut reg_content = 0x0000_0000;
-            // for i in 0..31 {
-
-            //     reg_content |= (0b1_u32) << i as u32;
-            // }
             reg_content |= (0b1_u32) << 13;
             ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
         }
