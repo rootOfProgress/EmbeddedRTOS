@@ -10,7 +10,6 @@ pub mod sched;
 
 use core::panic::PanicInfo;
 use core::ptr;
-// use ctrl::control::__exec;
 use interrupts::systick;
 
 fn foo() {
@@ -91,13 +90,7 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    unsafe {
-        // asm! {"bkpt"}
-    }
     if sched::scheduler::running() {
-        unsafe {
-            // asm! {"bkpt"}
-        }
         ctrl::control::save_proc_context();
         sched::scheduler::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
     }
@@ -107,42 +100,15 @@ pub extern "C" fn SysTick() {
         asm! ("mov {}, r0", out(reg) msp_val);
         sched::scheduler::set_msp_entry(msp_val);
     }
-    // let qux = sched::scheduler::get_msp_entry();
-    // unsafe {
-    //     //     // asm!("bkpt");
-    //     asm!(
-    //         "
-    //                 push {{R4-R11}}    
-    //                 "
-    //     );
-    // }
 
     sched::scheduler::context_switch();
     if sched::scheduler::is_usr() {
         unsafe {
             __set_exec_mode(0xFFFF_FFFD);
             __exec(sched::scheduler::get_msp_entry());
-            // asm!("bkpt");
             ctrl::control::__load_process_context();
         }
     }
-        // asm!("bkpt");
-    // unsafe {
-    //     asm!(
-    //         "
-    //     pop {{R4-R11}}
-    //     "
-    //     );
-    // }
-    // let y = sched::scheduler::get_msp_entry();
-    // unsafe {
-    //     __set_exec_mode(0xFFFF_FFF9);
-    //     if !true {
-    //     } else {
-    //         // __set_exec_mode(0xFFFF_FFF9);
-    //     }
-    //     __exec(y);
-    // }
 }
 
 #[no_mangle]
