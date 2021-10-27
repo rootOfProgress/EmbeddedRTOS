@@ -3,7 +3,7 @@ pub mod task_control {
 
     enum VecMeta {
         MAGIC,
-        NOTASSIGNED,
+        PREV,
         CURRENT,
         SIZE,
         FLUSH,
@@ -29,7 +29,7 @@ pub mod task_control {
 
         match v_type {
             VecMeta::MAGIC => mem::memory_handler::write(VECTOR_START, vec_meta | (value << 24)),
-            VecMeta::NOTASSIGNED => {
+            VecMeta::PREV => {
                 mem::memory_handler::write(VECTOR_START, vec_meta | (value << 16))
             }
             VecMeta::CURRENT => mem::memory_handler::write(VECTOR_START, vec_meta | (value << 8)),
@@ -71,6 +71,8 @@ pub mod task_control {
     pub fn next_task() {
         let vec_meta = get_vec_meta();
         let vec_meta_blk: u32 = mem::memory_handler::read(VECTOR_START);
+
+        write_meta(vec_meta.2 as u32, VecMeta::PREV);
         // size == current, go to 0
         if vec_meta.2 == (vec_meta.3 - 1) {
             mem::memory_handler::write(VECTOR_START, vec_meta_blk & !(0xFF << 8));
@@ -98,7 +100,7 @@ pub mod task_control {
     pub fn set_up() {
         write_meta(0x0000_0000, VecMeta::FLUSH);
         write_meta(0xFF, VecMeta::MAGIC);
-        write_meta(0xAB, VecMeta::NOTASSIGNED);
+        write_meta(0x0, VecMeta::PREV);
         write_meta(0x0, VecMeta::CURRENT);
         write_meta(0x0, VecMeta::SIZE);
     }
@@ -109,7 +111,8 @@ pub mod scheduler {
     use crate::sched::task_control;
 
     use crate::ctrl::control;
-    use core::sync::atomic::{AtomicU32, Ordering};
+    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    static IS_USER_TASK: AtomicBool = AtomicBool::new(false);
 
     static MSP_ENTRY: AtomicU32 = AtomicU32::new(0x0000_0000);
 
@@ -138,6 +141,7 @@ pub mod scheduler {
         let (task_addr, task_mode) = task_control::current_task();
 
         if task_mode == 0xFFFF {
+            IS_USER_TASK.store(true, Ordering::Relaxed);
             run(task_addr);
         } 
         task_control::next_task();
