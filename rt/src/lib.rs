@@ -43,7 +43,7 @@ pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
     sched::scheduler::init_task_mng();
-    // sched::scheduler::add_to_vec(addr, mode, state)
+
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -96,21 +96,27 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
+
+    // TODO: reduce overhead and make code more clear!!
     unsafe {
         __get_msp_entry();
         let msp_val: u32;
         asm! ("mov {}, r0", out(reg) msp_val);
         sched::scheduler::set_msp_entry(msp_val);
     }
-
-    unsafe {
-        __save_process_context();
+    if sched::scheduler::usr_is_running() {
+        unsafe {
+            __save_process_context();
+        }
+        sched::task_control::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
     }
-    sched::task_control::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
+
     sched::scheduler::context_switch();
-    unsafe {
-        __exec(sched::scheduler::get_msp_entry());
-        ctrl::control::__load_process_context();
+    if sched::scheduler::usr_is_running() {
+        unsafe {
+            __exec(sched::scheduler::get_msp_entry());
+            ctrl::control::__load_process_context();
+        }
     }
 }
 

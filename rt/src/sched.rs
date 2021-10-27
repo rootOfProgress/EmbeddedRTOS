@@ -18,7 +18,7 @@ pub mod task_control {
         let vec_meta = mem::memory_handler::read(VECTOR_START);
         (
             ((vec_meta & 0xff000000) >> 24) as u8, // magic
-            ((vec_meta & 0x00ff0000) >> 16) as u8, // not assigned
+            ((vec_meta & 0x00ff0000) >> 16) as u8, // previous pos
             ((vec_meta & 0x0000ff00) >> 8) as u8,  // current pos
             ((vec_meta & 0x000000ff) >> 0) as u8,  // overall size
         )
@@ -45,14 +45,9 @@ pub mod task_control {
             return;
         }
         let vec_meta = get_vec_meta();
-        let mut foo = vec_meta.2 as u32;
-        if foo == 0 {
-            foo = 3;
-        } else {
-            foo -= 1;
-        }
+
         mem::memory_handler::write(
-            (DATA_START + ADR_OFFSET) + ((foo as u32) * BLOCK_SIZE as u32),
+            (DATA_START + ADR_OFFSET) + ((vec_meta.1 as u32) * BLOCK_SIZE as u32),
             addr,
         );
     }
@@ -72,16 +67,20 @@ pub mod task_control {
         let vec_meta = get_vec_meta();
         let vec_meta_blk: u32 = mem::memory_handler::read(VECTOR_START);
 
-        write_meta(vec_meta.2 as u32, VecMeta::PREV);
+        mem::memory_handler::write(
+            VECTOR_START,
+            (vec_meta_blk & !(0x00FF_0000)) | (((vec_meta.2) as u32) << 16),
+        );
         // size == current, go to 0
         if vec_meta.2 == (vec_meta.3 - 1) {
-            mem::memory_handler::write(VECTOR_START, vec_meta_blk & !(0xFF << 8));
+            mem::memory_handler::write(VECTOR_START, mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00));
         } else {
             mem::memory_handler::write(
                 VECTOR_START,
-                vec_meta_blk & !(0xFF00) | (((vec_meta.2 + 0x01) as u32) << 8) as u32,
+                (mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00)) | (((vec_meta.2 + 0b1) as u32) << 8),
             );
         }
+
     }
 
     pub fn insert_task(addr: u32, is_user: bool) {
@@ -118,6 +117,10 @@ pub mod scheduler {
 
     pub fn init_task_mng() {
         task_control::set_up();
+    }
+
+    pub fn usr_is_running() -> bool {
+        IS_USER_TASK.load(Ordering::Relaxed)
     }
 
     pub fn queue_task(addr: u32, is_user: bool) {
