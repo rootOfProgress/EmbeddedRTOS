@@ -1,17 +1,5 @@
-pub mod scheduler {
-
-    use crate::ctrl::control;
+pub mod task_control {
     use crate::mem;
-    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-
-    static IS_USER_TASK: AtomicBool = AtomicBool::new(false);
-    static USR_IS_RUNNING: AtomicBool = AtomicBool::new(false);
-    static msp_entry: AtomicU32 = AtomicU32::new(0x0000_0000);
-
-    const VECTOR_START: u32 = 0x2000_0100;
-    const ADR_OFFSET: u32 = 0x04;
-    const DATA_START: u32 = 0x2000_0104;
-    const BLOCK_SIZE: u8 = 0x08;
 
     enum VecMeta {
         MAGIC,
@@ -21,23 +9,11 @@ pub mod scheduler {
         FLUSH,
     }
 
-    enum State {
-        RUNNING, // 0
-        WAITING, // 1
-        READY,   // 2
-    }
+    const VECTOR_START: u32 = 0x2000_0100;
+    const ADR_OFFSET: u32 = 0x04;
+    const DATA_START: u32 = 0x2000_0104;
+    const BLOCK_SIZE: u8 = 0x08;
 
-    enum TaskMeta {
-        MODE,
-        State,
-    }
-
-    pub fn is_usr() -> bool {
-        IS_USER_TASK.load(Ordering::Relaxed)
-    } 
-    pub fn running() -> bool {
-        USR_IS_RUNNING.load(Ordering::Relaxed)
-    } 
     fn get_vec_meta() -> (u8, u8, u8, u8) {
         let vec_meta = mem::memory_handler::read(VECTOR_START);
         (
@@ -75,24 +51,30 @@ pub mod scheduler {
         } else {
             foo -= 1;
         }
-        mem::memory_handler::write((DATA_START + ADR_OFFSET) + ((foo as u32) * BLOCK_SIZE as u32), addr);
+        mem::memory_handler::write(
+            (DATA_START + ADR_OFFSET) + ((foo as u32) * BLOCK_SIZE as u32),
+            addr,
+        );
     }
 
-    fn current_task() -> (u32, u32) {
+    pub fn current_task() -> (u32, u32) {
         let vec_meta = get_vec_meta();
-        let task_adr = mem::memory_handler::read((DATA_START + ADR_OFFSET) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32));
-        let task_meta = mem::memory_handler::read((DATA_START) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32));
+        let task_adr = mem::memory_handler::read(
+            (DATA_START + ADR_OFFSET) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32),
+        );
+        let task_meta =
+            mem::memory_handler::read((DATA_START) + ((vec_meta.2 as u32) * BLOCK_SIZE as u32));
         let task_mode = task_meta & 0x0000_FFFF;
         (task_adr, task_mode)
     }
 
-    fn next_task() {
+    pub fn next_task() {
         let vec_meta = get_vec_meta();
         let vec_meta_blk: u32 = mem::memory_handler::read(VECTOR_START);
         // size == current, go to 0
         if vec_meta.2 == (vec_meta.3 - 1) {
             mem::memory_handler::write(VECTOR_START, vec_meta_blk & !(0xFF << 8));
-        } else {            
+        } else {
             mem::memory_handler::write(
                 VECTOR_START,
                 vec_meta_blk & !(0xFF00) | (((vec_meta.2 + 0x01) as u32) << 8) as u32,
@@ -100,11 +82,15 @@ pub mod scheduler {
         }
     }
 
-    pub fn insert_task(addr: u32) {
+    pub fn insert_task(addr: u32, is_user: bool) {
         let vec_meta = get_vec_meta();
         let addr_task_meta = (BLOCK_SIZE * vec_meta.3) as u32 + DATA_START;
         let addr_task_ptr = addr_task_meta + 0x04;
-        mem::memory_handler::write(addr_task_meta, 0x00FFFFFF);
+        if is_user {
+            mem::memory_handler::write(addr_task_meta, 0x00FFFFFF);
+        } else {
+            mem::memory_handler::write(addr_task_meta, 0x00FF0000);
+        }
         mem::memory_handler::write(addr_task_ptr, addr);
         write_meta((vec_meta.3 + 0x01) as u32, VecMeta::SIZE);
     }
@@ -116,12 +102,30 @@ pub mod scheduler {
         write_meta(0x0, VecMeta::CURRENT);
         write_meta(0x0, VecMeta::SIZE);
     }
+}
+
+pub mod scheduler {
+
+    use crate::sched::task_control;
+
+    use crate::ctrl::control;
+    use core::sync::atomic::{AtomicU32, Ordering};
+
+    static MSP_ENTRY: AtomicU32 = AtomicU32::new(0x0000_0000);
+
+    pub fn init_task_mng() {
+        task_control::set_up();
+    }
+
+    pub fn queue_task(addr: u32, is_user: bool) {
+        task_control::insert_task(addr, is_user);
+    }
 
     pub fn set_msp_entry(v: u32) {
-        msp_entry.store(v, Ordering::Relaxed);
+        MSP_ENTRY.store(v, Ordering::Relaxed);
     }
     pub fn get_msp_entry() -> u32 {
-        msp_entry.load(Ordering::Relaxed)
+        MSP_ENTRY.load(Ordering::Relaxed)
     }
 
     pub fn run(task_addr: u32) {
@@ -131,14 +135,11 @@ pub mod scheduler {
     }
 
     pub fn context_switch() {
-        let (task_addr, task_mode) = current_task();
+        let (task_addr, task_mode) = task_control::current_task();
+
         if task_mode == 0xFFFF {
-            IS_USER_TASK.store(true, Ordering::Relaxed);
-            USR_IS_RUNNING.store(true, Ordering::Relaxed);
             run(task_addr);
-        } else {
-            IS_USER_TASK.store(false, Ordering::Relaxed);
-        }
-        next_task();
+        } 
+        task_control::next_task();
     }
 }

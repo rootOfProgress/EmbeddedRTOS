@@ -18,6 +18,10 @@ fn foo() {
     let rcc_ahbenr = 0x40021000 | 0x14;
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
 
+    let gpio_port_a0 = gpio::gpio_driver::GpioX::new("A", 0);
+    gpio_port_a0.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_a0.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    gpio_port_a0.set_odr(gpio::gpio_types::OutputState::High);
     // see p 54 reg boundaries
     let gpio_port_e11 = gpio::gpio_driver::GpioX::new("E", 11);
     gpio_port_e11.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
@@ -38,7 +42,7 @@ fn foo() {
 pub unsafe extern "C" fn Reset() -> ! {
     foo();
     systick::STK::set_up_systick(1000);
-    sched::scheduler::set_up();
+    sched::scheduler::init_task_mng();
     // sched::scheduler::add_to_vec(addr, mode, state)
     extern "C" {
         static mut _sbss: u8;
@@ -83,17 +87,15 @@ extern "C" {
     fn BusFault();
     fn UsageFault();
     fn PendSV();
+    fn __save_process_context();
     pub fn __exec(x: u32);
+    pub fn __exec_kernel(x: u32);
     pub fn __set_exec_mode(y: u32);
     pub fn __get_msp_entry();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    if sched::scheduler::running() {
-        ctrl::control::save_proc_context();
-        sched::scheduler::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
-    }
     unsafe {
         __get_msp_entry();
         let msp_val: u32;
@@ -101,13 +103,14 @@ pub extern "C" fn SysTick() {
         sched::scheduler::set_msp_entry(msp_val);
     }
 
+    unsafe {
+        __save_process_context();
+    }
+    sched::task_control::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
     sched::scheduler::context_switch();
-    if sched::scheduler::is_usr() {
-        unsafe {
-            __set_exec_mode(0xFFFF_FFFD);
-            __exec(sched::scheduler::get_msp_entry());
-            ctrl::control::__load_process_context();
-        }
+    unsafe {
+        __exec(sched::scheduler::get_msp_entry());
+        ctrl::control::__load_process_context();
     }
 }
 

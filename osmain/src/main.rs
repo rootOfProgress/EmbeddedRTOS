@@ -102,11 +102,11 @@ pub fn main() -> ! {
     let process_3 = ProcessFrame::new(context3 as *const () as u32);
     let process_4 = ProcessFrame::new(context4 as *const () as u32);
 
-    // todo: pass addr!!!
-    scheduler::insert_task(ptr::addr_of!(process_1.r4) as u32);
-    scheduler::insert_task(ptr::addr_of!(process_2.r4) as u32);
-    scheduler::insert_task(ptr::addr_of!(process_3.r4) as u32);
-    scheduler::insert_task(ptr::addr_of!(process_4.r4) as u32);
+    scheduler::queue_task(ptr::addr_of!(process_1.r4) as u32, true);
+    scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
+    scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
+    scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
+    // scheduler::queue_task(0x1234_5678, false);
     // unsafe {
     //     asm! {"bkpt"}
     // }
@@ -130,11 +130,11 @@ pub fn main() -> ! {
         );
     }
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 13;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        // unsafe {
+            // let mut reg_content = 0x0000_0000;
+            // reg_content |= (0b1_u32) << 13;
+            // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 
