@@ -6,13 +6,40 @@ extern crate rt;
 mod cp;
 mod dp;
 mod handler;
-
-use core::sync::atomic::{AtomicBool, Ordering};
+mod kernel;
 
 use cp::stk::SystemTimer;
 use dp::bus::PERIPHERALS;
+use kernel::sched::{init_scheduler, Scheduler};
 
-static TOGGLE_FLAG: AtomicBool = AtomicBool::new(false);
+static mut TOGGLE_FLAG: bool = false;
+
+extern "C" {
+    pub fn __invoke(x: u32) -> u32;
+    pub fn __start_kernel(x: u32);
+    pub fn syscall();
+    pub fn __schedule();
+}
+
+#[no_mangle]
+fn user_task() {
+    let mut x = 0;
+    loop {
+        unsafe {
+            TOGGLE_FLAG = true;
+            x += 1;
+            __schedule();
+        }
+    }
+}
+
+#[no_mangle]
+fn load_scheduler() {
+    unsafe { __schedule() };
+    let mut scheduler = Scheduler::default();
+    scheduler.add_user_task(user_task).unwrap();
+    scheduler.schedule_user_threads();
+}
 
 #[no_mangle]
 fn main() -> ! {
@@ -24,19 +51,35 @@ fn main() -> ! {
     let mut leds = handler::LED::new(gpioe);
     leds.on(9);
     leds.on(8);
-    leds.on(15);
-
+    // leds.on(15);
     let st = SystemTimer::take();
     st.set_reload(0x3FFFF).enable();
 
+    init_scheduler(load_scheduler);
+
     loop {
-        if TOGGLE_FLAG.fetch_and(false, Ordering::Relaxed) {
-            leds.toggle(9);
+        unsafe {
+            if TOGGLE_FLAG {
+                leds.toggle(9);
+                TOGGLE_FLAG = false;
+            }
         }
     }
 }
 
+pub fn kernel_thread() {}
+
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    TOGGLE_FLAG.store(true, Ordering::Relaxed)
+    unsafe {
+        __schedule();
+    }
 }
+
+#[no_mangle]
+pub extern "C" fn PendSV() {}
+
+// #[no_mangle]
+// pub extern "C" fn SVCall() {
+//     unsafe { __schedule(); }
+// }
