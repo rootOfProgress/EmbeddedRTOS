@@ -3,12 +3,12 @@ use core::{
     ptr::{self, addr_of},
 };
 
-use crate::{__invoke, __save_psp, __schedule};
+use crate::{__invoke, __save_psp};
 use ProcessState::*;
 /// # Scheduler
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum ProcessState {
     Created,
     Waiting,
@@ -18,6 +18,7 @@ pub enum ProcessState {
 }
 
 #[repr(C, align(8))]
+#[derive(Debug, Default)]
 pub struct AutoStackFrame {
     auto_r0: u32,
     auto_r1: u32,
@@ -30,25 +31,26 @@ pub struct AutoStackFrame {
 }
 
 #[repr(C)]
+#[derive(Debug, Default)]
 pub struct InitialStackFrame {
     r4_control: u32,
     r5: u32,
     r6: u32,
     r7: u32,
     r8: u32,
-    // r9_tr: u32,
     r10: u32,
     r11: u32,
     lr: u32,
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ProcessFrame {
     p_stack: [u32; 64],
     isf: InitialStackFrame,
-    asf: AutoStackFrame,
-    psp: u32,
-    id: usize,
+    pub asf: AutoStackFrame,
+    pub psp: u32,
+    pub id: usize,
     state: ProcessState,
 }
 
@@ -82,7 +84,7 @@ impl Scheduler {
             .find(|(_, t)| t.is_none())
         {
             Some((n, empty_slot)) => {
-                let mut p = ProcessFrame {
+                let p = ProcessFrame {
                     p_stack: [0; 64],
                     isf: InitialStackFrame {
                         r4_control: 0x3,
@@ -90,7 +92,6 @@ impl Scheduler {
                         r6: 0xFF6,
                         r7: 0xFF7,
                         r8: 0xFF8,
-                        // r9_tr: 0xFF9,
                         r10: 0xFFA,
                         r11: 0xFFB,
                         lr: 0xfffffffd,
@@ -109,8 +110,6 @@ impl Scheduler {
                     id: n,
                     state: Created,
                 };
-                p.psp = addr_of!(p.asf.auto_r0) as *const () as u32;
-                // p.isf.r9_tr = addr_of!(p.asf.auto_r0) as *const () as u32;
                 *empty_slot = Some(p);
                 Ok(())
             }
@@ -138,6 +137,7 @@ impl Scheduler {
         unsafe {
             // __schedule();
             // needs to call handler!!!
+            t.psp = addr_of!(t.asf) as *const () as u32;
             t.state = Running;
             __invoke(t.psp);
             t.psp = __save_psp();
@@ -157,11 +157,6 @@ impl Scheduler {
     fn handle_running(_t: &mut ProcessFrame) {}
 }
 
-// #[no_mangle]
-// pub extern "C" fn SVCall(state: ProcessState) {
-
-// }
-
 pub fn init_scheduler(init_fn: fn()) {
     let init_fn = ptr::addr_of!(init_fn);
     let kernel_thread = KernelFrame {
@@ -172,7 +167,6 @@ pub fn init_scheduler(init_fn: fn()) {
             r6: 0xFF6,
             r7: 0xFF7,
             r8: 0xFF8,
-            // r9_tr: 0xFF9,
             r10: 0xFFA,
             r11: 0xFFB,
             lr: 0xfffffffd,
@@ -191,7 +185,6 @@ pub fn init_scheduler(init_fn: fn()) {
         state: Running,
         p_buffer: [0; 512],
     };
-    // kernel_thread.isf.r9_tr = ptr::addr_of!(kernel_thread.asf.auto_r0) as *const () as u32;
     unsafe {
         __invoke(addr_of!(kernel_thread.asf.auto_r0) as *const () as u32);
     }

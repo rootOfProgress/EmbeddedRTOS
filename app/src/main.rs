@@ -19,31 +19,12 @@ static mut TOGGLE_FLAG: bool = false;
 extern "C" {
     pub fn __invoke(x: u32) -> u32;
     pub fn syscall();
-    pub fn __schedule();
+    pub fn __breakpoint();
     pub fn __save_psp() -> u32;
 }
 
 #[no_mangle]
 fn user_task() {
-    let mut _x = 0;
-    loop {
-        unsafe {
-            // TOGGLE_FLAG = true;
-            _x += 1;
-            // syscall();
-        }
-    }
-}
-
-#[no_mangle]
-fn load_scheduler() {
-    let mut scheduler = Scheduler::default();
-    scheduler.add_user_task(user_task).unwrap();
-    scheduler.schedule_user_threads();
-}
-
-#[no_mangle]
-fn main() -> ! {
     let serial = unsafe { PERIPHERALS.take_serial() };
     let mut ahb1 = serial.ahb1();
     ahb1.rcc(|rcc| rcc.iopeen());
@@ -52,12 +33,6 @@ fn main() -> ! {
     let mut leds = handler::LED::new(gpioe);
     leds.on(9);
     leds.on(8);
-    // leds.on(15);
-    let st = SystemTimer::take();
-    st.set_reload(0x3FFFF).enable();
-
-    init_scheduler(load_scheduler);
-
     loop {
         unsafe {
             if TOGGLE_FLAG {
@@ -68,7 +43,32 @@ fn main() -> ! {
     }
 }
 
-pub fn kernel_thread() {}
+#[no_mangle]
+fn user_task_turn_off_led() {
+    loop {
+        unsafe {
+            TOGGLE_FLAG = true;
+        }
+    }
+}
+
+#[no_mangle]
+fn load_scheduler() {
+    let mut scheduler = Scheduler::default();
+    scheduler.add_user_task(user_task_turn_off_led).unwrap();
+    scheduler.add_user_task(user_task).unwrap();
+    scheduler.schedule_user_threads();
+}
+
+#[no_mangle]
+fn main() -> ! {
+    let st = SystemTimer::take();
+    st.set_reload(0x3FFFF).enable();
+
+    init_scheduler(load_scheduler);
+
+    loop {}
+}
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
@@ -88,16 +88,3 @@ pub fn trigger_PendSV() {
         );
     }
 }
-
-// #[no_mangle]
-// pub extern "C" fn PendSV() {
-//     unsafe {
-//         let x = 5544433;
-//         __schedule();
-//     }
-// }
-
-// #[no_mangle]
-// pub extern "C" fn SVCall() {
-//     unsafe { __schedule(); }
-// }
