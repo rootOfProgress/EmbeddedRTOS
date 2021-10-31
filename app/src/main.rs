@@ -8,6 +8,8 @@ mod dp;
 mod handler;
 mod kernel;
 
+use core::ptr::{read_volatile, write_volatile};
+
 use cp::stk::SystemTimer;
 use dp::bus::PERIPHERALS;
 use kernel::sched::{init_scheduler, Scheduler};
@@ -16,26 +18,25 @@ static mut TOGGLE_FLAG: bool = false;
 
 extern "C" {
     pub fn __invoke(x: u32) -> u32;
-    pub fn __start_kernel(x: u32);
     pub fn syscall();
     pub fn __schedule();
+    pub fn __save_psp() -> u32;
 }
 
 #[no_mangle]
 fn user_task() {
-    let mut x = 0;
+    let mut _x = 0;
     loop {
         unsafe {
-            TOGGLE_FLAG = true;
-            x += 1;
-            __schedule();
+            // TOGGLE_FLAG = true;
+            _x += 1;
+            // syscall();
         }
     }
 }
 
 #[no_mangle]
 fn load_scheduler() {
-    unsafe { __schedule() };
     let mut scheduler = Scheduler::default();
     scheduler.add_user_task(user_task).unwrap();
     scheduler.schedule_user_threads();
@@ -71,13 +72,30 @@ pub fn kernel_thread() {}
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
+    trigger_PendSV();
+}
+
+// Set PendSV to pending*/
+// Interrupt control and state register (ICSR)  0xE000ED04
+#[no_mangle]
+#[allow(non_snake_case)]
+pub fn trigger_PendSV() {
+    let icsr: u32 = 0xE000_ED04;
     unsafe {
-        __schedule();
+        write_volatile(
+            icsr as *mut u32,
+            read_volatile(icsr as *mut u32) | (0b1 << 28),
+        );
     }
 }
 
-#[no_mangle]
-pub extern "C" fn PendSV() {}
+// #[no_mangle]
+// pub extern "C" fn PendSV() {
+//     unsafe {
+//         let x = 5544433;
+//         __schedule();
+//     }
+// }
 
 // #[no_mangle]
 // pub extern "C" fn SVCall() {
