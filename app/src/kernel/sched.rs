@@ -3,7 +3,7 @@ use core::{
     ptr::{self, addr_of},
 };
 
-use crate::{__invoke, __save_psp};
+use crate::{__breakpoint, __invoke, __save_psp};
 use ProcessState::*;
 /// # Scheduler
 
@@ -46,7 +46,7 @@ pub struct InitialStackFrame {
 #[repr(C)]
 #[derive(Debug)]
 pub struct ProcessFrame {
-    p_stack: [u32; 64],
+    p_stack: [u32; 128],
     isf: InitialStackFrame,
     pub asf: AutoStackFrame,
     pub psp: u32,
@@ -85,7 +85,7 @@ impl Scheduler {
         {
             Some((n, empty_slot)) => {
                 let p = ProcessFrame {
-                    p_stack: [0; 64],
+                    p_stack: [0; 128],
                     isf: InitialStackFrame {
                         r4_control: 0x3,
                         r5: 0xFF5,
@@ -135,8 +135,6 @@ impl Scheduler {
 
     fn handle_created(t: &mut ProcessFrame) {
         unsafe {
-            // __schedule();
-            // needs to call handler!!!
             t.psp = addr_of!(t.asf) as *const () as u32;
             t.state = Running;
             __invoke(t.psp);

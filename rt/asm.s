@@ -2,6 +2,26 @@
 .syntax unified
 .thumb
 
+.global __syscall
+__syscall:
+    bx lr
+
+.global __sprint
+__sprint:
+    svc 1 ;
+    bx lr
+    
+
+.type SVCall, %function
+.global SVCall
+SVCall:
+    push {lr}
+    mov r1, r0
+    mov r0, #0x04
+    bkpt 0xAB ;
+    pop {pc}
+
+
 .global __invoke
 __invoke:
     @ bkpt
