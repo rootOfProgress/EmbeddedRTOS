@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 #![feature(asm)]
-pub mod gpio;
+pub mod dev;
 
 pub mod ctrl;
 mod interrupts;
@@ -22,20 +22,20 @@ fn foo() {
 
 
     // see p 54 reg boundaries
-    let gpio_port_e11 = gpio::gpio_driver::GpioX::new("E", 11);
-    gpio_port_e11.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_e11.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
-    let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 12);
-    gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    let gpio_port_e11 = dev::gpio_driver::GpioX::new("E", 11);
+    gpio_port_e11.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e11.set_otyper(dev::gpio_types::OutputTypes::PushPull);
+    let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 12);
+    gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
 
-    let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 14);
-    gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 14);
+    gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
 
-    let gpio_port_e14 = gpio::gpio_driver::GpioX::new("E", 13);
-    gpio_port_e14.set_moder(gpio::gpio_types::ModerTypes::GeneralPurposeOutputMode);
-    gpio_port_e14.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 13);
+    gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
+    gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
 
     // p 166 tim2en
     let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
@@ -56,17 +56,10 @@ fn foo() {
         ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14));
     }
 
-    let gpio_port_a0 = gpio::gpio_driver::GpioX::new("A", 9);
-    gpio_port_a0.set_moder(gpio::gpio_types::ModerTypes::AlternateFunctionMode);
-    gpio_port_a0.set_otyper(gpio::gpio_types::OutputTypes::PushPull);
+    let gpio_port_a0 = dev::gpio_driver::GpioX::new("A", 9);
+    gpio_port_a0.set_moder(dev::gpio_types::ModerTypes::AlternateFunctionMode);
+    gpio_port_a0.set_otyper(dev::gpio_types::OutputTypes::PushPull);
     gpio_port_a0.into_af(7);
-    // let gpioa_af = 0x4800_0000 | 0x24;
-    // unsafe {
-    //     let existing_value = ptr::read_volatile(gpioa_af as *mut u32);
-    //     ptr::write_volatile(gpioa_af as *mut u32, existing_value | (0b0111 << 4));
-    //     // let existing_value = ptr::read_volatile((gpioa_base | 0x08) as *mut u32);
-    //     // ptr::write_volatile((gpioa_base | 0x08) as *mut u32, existing_value | (0xC_0000));
-    // }
 
     let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
     unsafe {
@@ -74,23 +67,23 @@ fn foo() {
         ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14 | 0b1));
     }
 
-    let usart2_brr = 0x4001_3800 | 0x0C;
-    unsafe {
-        // clk / 9600 baud
-        ptr::write_volatile(usart2_brr as *mut u32, 0x341);
-    }
-    let usart1_cr1 = 0x4001_3800;
-    unsafe {
-        let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-        ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
-        let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-        ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
-    }
+    // let usart2_brr = 0x4001_3800 | 0x0C;
+    // unsafe {
+    //     // clk / 9600 baud
+    //     ptr::write_volatile(usart2_brr as *mut u32, 0x341);
+    // }
+    let usart1 = dev::uart::new(1, 9600);
+    usart1.enable();
+    // let usart1_cr1 = 0x4001_3800;
+    // unsafe {
+    //     let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
+    //     ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
+    //     let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
+    //     ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
+    // }
 }
 
 pub fn print_k(msg: &str) {
-    // loop {};
-    // IS_WRITING.store(true, Ordering::Relaxed);
     let usart2_tdr = 0x4001_3800 | 0x28;
     let usart2_isr = 0x4001_3800 | 0x1C;
 
@@ -99,9 +92,7 @@ pub fn print_k(msg: &str) {
             ptr::write_volatile(usart2_tdr as *mut u32, c as u32);
             while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
         }
-    } 
-    // IS_WRITING.store(false, Ordering::Relaxed);
-
+    }
 }
 
 #[no_mangle]

@@ -1,26 +1,65 @@
+// NOTE: ONLY FOR TESTPURPOSES, NO GENERIC USART DRIVER YET!
+pub mod uart {
+    const USART1_BASE: u32 = 0x4001_3800;
+    use core::ptr;
+    pub struct UsartX {
+        usart_base_adress: u32,
+        bus_number: u8,
+        baudrate: u32,
+    }
+    pub fn new(bus_number: u8, baudrate: u32) -> UsartX {
+        UsartX {
+            usart_base_adress: match bus_number {
+                1 => USART1_BASE,
+                _ => USART1_BASE,
+            },
+            bus_number,
+            baudrate,
+        }
+    }
+    impl UsartX {
+        pub fn enable(&self) {
+            let usartx_brr = self.usart_base_adress | 0x0C;
+            let baudrate_divisor = 8_000_000 / self.baudrate;
+            unsafe {
+                // clk / 9600 baud
+                ptr::write_volatile(usartx_brr as *mut u32, baudrate_divisor);
+            }
+
+            let usart1_cr1 = self.usart_base_adress;
+            unsafe {
+                let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
+                ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
+                let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
+                ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
+            }
+        }
+    }
+}
+
 pub mod gpio_types {
-    
+
     pub enum OutputTypes {
         PushPull,
         OpenDrain,
     }
-    
+
     pub enum ModerTypes {
         InputMode,
         GeneralPurposeOutputMode,
         AlternateFunctionMode,
-        AnalogMode
+        AnalogMode,
     }
-    
+
     pub enum OutputState {
         High,
-        Low
+        Low,
     }
 }
 
 pub mod gpio_driver {
-    use core::ptr;
     use super::gpio_types;
+    use core::ptr;
 
     // p52
     const GPIOA_BASE: u32 = 0x4800_0000;
@@ -30,7 +69,7 @@ pub mod gpio_driver {
 
     pub struct GpioX {
         gpio_base_adress: u32,
-        pin_number: u8
+        pin_number: u8,
     }
 
     impl GpioX {
@@ -41,24 +80,24 @@ pub mod gpio_driver {
                     "B" => GPIOB_BASE,
                     "C" => GPIOC_BASE,
                     "E" => GPIOE_BASE,
-                    _ => GPIOA_BASE
+                    _ => GPIOA_BASE,
                 },
-                pin_number
+                pin_number,
             }
         }
         pub fn set_moder(&self, moder_type: gpio_types::ModerTypes) {
             let gpiox_moder_offset = 0x00;
             let gpiox_moder = self.gpio_base_adress | gpiox_moder_offset;
-    
+
             // 32 bit register
             let mut current_register_content: u32;
-    
+
             unsafe {
                 current_register_content = ptr::read_volatile(gpiox_moder as *const u32);
             }
             // clear bits
             // current_register_content &= !(0b11 as u32) << pin * 2;
-            
+
             let updated_register_content = match moder_type {
                 // clear bit
                 gpio_types::ModerTypes::InputMode => {
@@ -77,7 +116,7 @@ pub mod gpio_driver {
                 gpio_types::ModerTypes::AnalogMode => {
                     current_register_content |= (0b11 as u32) << self.pin_number * 2;
                     current_register_content
-                } 
+                }
             };
             unsafe {
                 ptr::write_volatile(gpiox_moder as *mut u32, updated_register_content);
@@ -87,16 +126,16 @@ pub mod gpio_driver {
         pub fn set_odr(&self, odr_type: gpio_types::OutputState) {
             let gpiox_odr_offset = 0x14;
             let gpiox_odr = self.gpio_base_adress | gpiox_odr_offset;
-    
+
             // 32 bit register
             let mut current_register_content: u32;
-    
+
             unsafe {
                 current_register_content = ptr::read_volatile(gpiox_odr as *const u32);
             }
             // clear bits
             // current_register_content &= !(0b1 as u32) << self.pin_number;
-    
+
             let updated_register_content = match odr_type {
                 gpio_types::OutputState::High => {
                     current_register_content |= (0b1 as u32) << self.pin_number;
@@ -141,16 +180,12 @@ pub mod gpio_driver {
             }
         }
         pub fn into_af(&self, af_number: u32) {
-            let gpiox_af_offset = if self.pin_number < 8 {
-                0x20
-            } else {
-                0x24
-            };
+            let gpiox_af_offset = if self.pin_number < 8 { 0x20 } else { 0x24 };
             let gpiox_af = self.gpio_base_adress | gpiox_af_offset;
 
             // 32 bit register
             let mut current_register_content: u32;
-    
+
             unsafe {
                 current_register_content = ptr::read_volatile(gpiox_af as *const u32);
             }
@@ -159,7 +194,7 @@ pub mod gpio_driver {
             if self.pin_number > 7 {
                 pin -= 8;
             }
-    
+
             current_register_content &= !(0xF as u32) << pin * 4;
             current_register_content |= af_number << pin * 4;
             unsafe {
