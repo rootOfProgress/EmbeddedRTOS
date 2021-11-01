@@ -167,25 +167,15 @@ pub extern "C" fn SysTick() {
     unsafe {
         __set_exc_return();
     }
-    if sched::scheduler::usr_is_running() {
         unsafe {
             __save_process_context();
         }
         sched::task_control::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
-    }
 
     sched::scheduler::context_switch();
-    if sched::scheduler::usr_is_running() {
         unsafe {
             __load_process_context();
         }
-    }
-    // tim2::stop_measurement();
-    // let t = tim2::read_value();
-    // print_str("context switch took: ");
-    // print_dec(t);
-    // print_str(" ns\n\r");
-    // tim2::reset_timer();
 }
 
 #[no_mangle]

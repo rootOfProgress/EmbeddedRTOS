@@ -137,9 +137,12 @@ pub mod scheduler {
         MSP_ENTRY.load(Ordering::Relaxed)
     }
 
-    pub fn immediate_start(addr: u32) {
+    pub fn immediate_start(addr: *const u32) {
         unsafe {
-            __write_psp(addr);
+            asm!("bkpt");
+        }
+        unsafe {
+            __write_psp(addr as u32);
             __load_process_context();
         }
     }
@@ -153,7 +156,7 @@ pub mod scheduler {
     pub fn context_switch() {
         let (task_addr, task_mode) = task_control::current_task();
         unsafe {
-            asm!("bkpt");
+            // asm!("bkpt");
         }
         if task_mode == 0xFFFF {
             IS_USER_TASK.store(true, Ordering::Relaxed);

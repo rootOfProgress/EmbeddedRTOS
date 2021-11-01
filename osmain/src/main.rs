@@ -121,11 +121,11 @@ pub fn main() -> ! {
     scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
 
-    // unsafe {
-    //     asm!("bkpt");
-    // }
+    unsafe {
+        asm!("bkpt");
+    }
 
-    scheduler::immediate_start(process_0.r4);
+    scheduler::immediate_start(ptr::addr_of!(process_0.r4));
     loop {}
 }
 
