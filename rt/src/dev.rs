@@ -1,3 +1,35 @@
+pub mod tim2 {
+    const TIM2_CR1: u32 = 0x4000_0000;
+    use core::ptr;
+
+    pub fn start_measurement() {
+        unsafe {
+            let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
+            ptr::write_volatile(TIM2_CR1  as *mut u32, existing_value | 0b1);
+        }
+    }
+    pub fn stop_measurement() {
+        unsafe {
+            let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
+            ptr::write_volatile(TIM2_CR1  as *mut u32, existing_value & !(0b1));
+        }
+    }
+    pub fn reset_timer() {
+        // TIM2 RESET -> p 166
+        let rcc_apb1rstr: u32 = 0x4002_1000 | 0x10;
+        unsafe {
+            let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
+            ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
+        }
+    }
+    pub fn read_value() -> u32 {
+        let timx_cnt: u32 = 0x4000_0000 | 0x24;
+        unsafe {
+            ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)
+        }
+    }
+}
+
 // NOTE: ONLY FOR TESTPURPOSES, NO GENERIC USART DRIVER YET!
 pub mod uart {
     const USART1_BASE: u32 = 0x4001_3800;

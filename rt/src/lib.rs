@@ -37,18 +37,21 @@ fn setup_clock_system() {
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
     
     
-    // p 166 tim2en
+    // TIM2EN -> p 166
     let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1enr as *mut u32);
         ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
     }
     
+    // TIM2 RESET -> p 166
     let rcc_apb1rstr: u32 = 0x40021000 | 0x10;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
-        ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
+        ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
     }
+
+    // USART1EN -> p 166
     let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb2enr as *mut u32);

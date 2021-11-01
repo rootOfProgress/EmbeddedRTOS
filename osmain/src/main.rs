@@ -4,7 +4,8 @@
 extern crate rt;
 use core::*;
 use rt::sched::scheduler;
-use rt::print_k;
+use rt::print_k;    
+use rt::dev::tim2;
 
 #[repr(C)]
 pub struct ProcessFrame {
@@ -61,7 +62,7 @@ fn deschedule() {
 
 fn context4() {
     loop {
-        print_k("running context -> 4...\n\r");
+        // print_k("running context -> 4...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 12;
@@ -72,7 +73,7 @@ fn context4() {
 
 fn context3() {
     loop {
-        print_k("running context -> 3...\n\r");
+        // print_k("running context -> 3...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 13;
@@ -84,7 +85,7 @@ fn context3() {
 fn context2() {
     loop {
 
-        print_k("running context -> 2...\n\r");
+        // print_k("running context -> 2...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 14;
@@ -94,7 +95,7 @@ fn context2() {
 }
 fn context1() {
     loop {
-        print_k("running context -> 1...\n\r");
+        // print_k("running context -> 1...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 11;
@@ -105,6 +106,7 @@ fn context1() {
 
 #[no_mangle]
 pub fn main() -> ! {
+    tim2::start_measurement();
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32);
@@ -114,35 +116,16 @@ pub fn main() -> ! {
     scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
-    // scheduler::queue_task(0x1234_5678, false);
-    // unsafe {
-    //     asm! {"bkpt"}
-    // }
+    tim2::stop_measurement();
+    let t = tim2::read_value();
+    // tim2::reset_timer();
     unsafe {
-        asm!(
-            "
-        mov r0, 0xF0
-        mov r1, 0xF1
-        mov r2, 0xF2
-        mov r3, 0xF3 
-        // 8 regs
-        mov r4, 0xF4
-        mov r5, 0xF5
-        mov r6, 0xF6
-        mov r7, 0xF7 
-        mov r8, 0xF8
-        mov r9, 0xF9
-        mov r10, 0xFA 
-        mov r11, 0xFB
-        "
-        );
+
+        asm!("bkpt");
     }
+    // print_k(t.parse());
+    
     loop {
-        // unsafe {
-            // let mut reg_content = 0x0000_0000;
-            // reg_content |= (0b1_u32) << 13;
-            // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
     }
 }
 
