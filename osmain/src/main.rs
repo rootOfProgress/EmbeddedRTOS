@@ -4,6 +4,7 @@
 extern crate rt;
 use core::*;
 use rt::sched::scheduler;
+use rt::interrupts;
 use rt::{print_dec, print_str};    
 use rt::dev::tim2;
 
@@ -119,6 +120,10 @@ pub fn main() -> ! {
     scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
+
+    // unsafe {
+    //     asm!("bkpt");
+    // }
 
     scheduler::immediate_start(process_0.r4);
     loop {}

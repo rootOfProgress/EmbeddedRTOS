@@ -152,7 +152,9 @@ pub mod scheduler {
 
     pub fn context_switch() {
         let (task_addr, task_mode) = task_control::current_task();
-
+        unsafe {
+            asm!("bkpt");
+        }
         if task_mode == 0xFFFF {
             IS_USER_TASK.store(true, Ordering::Relaxed);
             run(task_addr);

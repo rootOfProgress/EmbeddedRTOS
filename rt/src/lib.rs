@@ -4,7 +4,7 @@
 pub mod dev;
 
 pub mod ctrl;
-mod interrupts;
+pub mod interrupts;
 pub mod mem;
 pub mod sched;
 
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn Reset() -> ! {
     setup_clock_system();
     enable_gpio_e_leds();
     enable_serial_printing();
-    systick::STK::set_up_systick(200);
+    interrupts::systick::STK::set_up_systick(200);
     sched::scheduler::init_task_mng();
     print_str("hello from rtos!...\n\r");
 
