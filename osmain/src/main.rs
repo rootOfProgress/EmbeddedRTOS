@@ -4,9 +4,11 @@
 extern crate rt;
 use core::*;
 use rt::sched::scheduler;
+use rt::print_k;
 
 #[repr(C)]
 pub struct ProcessFrame {
+    stuff: [u32; 64],
     r4: u32,
     r5: u32,
     r6: u32,
@@ -23,12 +25,13 @@ pub struct ProcessFrame {
     lr: u32,
     pc: u32,
     psr: u32,
-    stuff: [u32; 32],
+    stuff1: [u32; 64],
 }
 
 impl ProcessFrame {
     pub fn new(target: u32) -> ProcessFrame {
         ProcessFrame {
+            stuff: unsafe { mem::MaybeUninit::uninit().assume_init() },
             r4: 0x66a,
             r5: 0x669,
             r6: 0x668,
@@ -45,7 +48,7 @@ impl ProcessFrame {
             lr: deschedule as *const () as u32,
             pc: target,
             psr: 0x21000000,
-            stuff: unsafe { mem::MaybeUninit::uninit().assume_init() },
+            stuff1: unsafe { mem::MaybeUninit::uninit().assume_init() },
         }
     }
 }
@@ -58,6 +61,7 @@ fn deschedule() {
 
 fn context4() {
     loop {
+        print_k("running context -> 4...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 12;
@@ -68,6 +72,7 @@ fn context4() {
 
 fn context3() {
     loop {
+        print_k("running context -> 3...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 13;
@@ -78,6 +83,8 @@ fn context3() {
 
 fn context2() {
     loop {
+
+        print_k("running context -> 2...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 14;
@@ -87,6 +94,7 @@ fn context2() {
 }
 fn context1() {
     loop {
+        print_k("running context -> 1...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 11;

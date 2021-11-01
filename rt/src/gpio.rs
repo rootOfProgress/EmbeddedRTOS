@@ -140,5 +140,34 @@ pub mod gpio_driver {
                 ptr::write_volatile(gpiox_otyper as *mut u32, updated_register_content);
             }
         }
+        pub fn into_af(&self, af_number: u32) {
+            let gpiox_af_offset = if self.pin_number < 8 {
+                0x20
+            } else {
+                0x24
+            };
+            let gpiox_af = self.gpio_base_adress | gpiox_af_offset;
+
+            // 32 bit register
+            let mut current_register_content: u32;
+    
+            unsafe {
+                current_register_content = ptr::read_volatile(gpiox_af as *const u32);
+            }
+
+            let mut pin = self.pin_number;
+            if self.pin_number > 7 {
+                pin -= 8;
+            }
+    
+            current_register_content &= !(0xF as u32) << pin * 4;
+            current_register_content |= af_number << pin * 4;
+            unsafe {
+                asm!("bkpt");
+            }
+            unsafe {
+                ptr::write_volatile(gpiox_af as *mut u32, current_register_content);
+            }
+        }
     }
 }
