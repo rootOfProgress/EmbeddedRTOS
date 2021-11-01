@@ -109,36 +109,19 @@ pub mod scheduler {
     extern "C" {
         pub fn __write_psp(addr: u32);
         fn __save_process_context();
-        fn __load_process_context();
+        fn __load_process_context(addr: u32);
         fn __get_current_psp() -> u32;
     
         // pub fn __exec();
     }
     use crate::{sched::task_control};
 
-    use crate::ctrl::control;
-    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-    static IS_USER_TASK: AtomicBool = AtomicBool::new(false);
-
-    static MSP_ENTRY: AtomicU32 = AtomicU32::new(0x0000_0000);
-
     pub fn init_task_mng() {
         task_control::set_up();
     }
 
-    pub fn usr_is_running() -> bool {
-        IS_USER_TASK.load(Ordering::Relaxed)
-    }
-
     pub fn queue_task(addr: u32, is_user: bool) {
         task_control::insert_task(addr, is_user);
-    }
-
-    pub fn set_msp_entry(v: u32) {
-        MSP_ENTRY.store(v, Ordering::Relaxed);
-    }
-    pub fn get_msp_entry() -> u32 {
-        MSP_ENTRY.load(Ordering::Relaxed)
     }
 
     pub fn immediate_start(addr: *const u32) {
@@ -146,14 +129,8 @@ pub mod scheduler {
             asm!("bkpt");
         }
         unsafe {
-            __write_psp(addr as u32);
-            __load_process_context();
-        }
-    }
-
-    pub fn run(task_addr: u32) {
-        unsafe {
-            control::__write_psp(task_addr);
+            // __write_psp(addr as u32);
+            __load_process_context(addr as u32);
         }
     }
 
@@ -162,9 +139,9 @@ pub mod scheduler {
         unsafe {
             __save_process_context();
             task_control::update_tasks_ptr(__get_current_psp());
-            __write_psp(task_addr);
+            // __write_psp(task_addr);
             task_control::next_task();
-            __load_process_context();
+            __load_process_context(task_addr);
         }
     }
 }

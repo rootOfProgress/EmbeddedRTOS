@@ -3,7 +3,6 @@
 #![feature(asm)]
 pub mod dev;
 
-pub mod ctrl;
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
@@ -11,7 +10,6 @@ pub mod sched;
 use core::panic::PanicInfo;
 use core::ptr;
 use core::mem::{MaybeUninit, zeroed};
-use interrupts::systick;
 
 use dev::tim2;
 
@@ -152,13 +150,7 @@ extern "C" {
     fn BusFault();
     fn UsageFault();
     fn PendSV();
-    fn __save_process_context();
-    pub fn __exec(x: u32);
-    // pub fn __exec_kernel(x: u32);
-    pub fn __set_exec_mode(y: u32);
-    pub fn __get_msp_entry() -> u32;
-    pub fn __load_process_context();
-    pub fn __set_exc_return();
+    fn __set_exc_return();
 }
 
 #[no_mangle]
@@ -170,9 +162,7 @@ pub extern "C" fn SysTick() {
 }
 
 #[no_mangle]
-pub extern "C" fn SVCall() {
-    sched::scheduler::run(0);
-}
+pub extern "C" fn SVCall() {}
 
 #[no_mangle]
 pub extern "C" fn DefaultExceptionHandler() {
