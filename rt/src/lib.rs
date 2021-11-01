@@ -148,7 +148,11 @@ extern "C" {
 pub extern "C" fn SysTick() {
     // TODO: reduce overhead and make code more clear!!
     // if !IS_WRITING.load(Ordering::Relaxed) {
-
+        let tim2_cr1: u32 = 0x4000_0000 | 0x00;
+    unsafe {
+        let existing_value = ptr::read_volatile(tim2_cr1 as *mut u32);
+        ptr::write_volatile(tim2_cr1  as *mut u32, existing_value | 0b1);
+    }
     unsafe {
         __get_msp_entry();
         let msp_val: u32;
@@ -169,6 +173,13 @@ pub extern "C" fn SysTick() {
             ctrl::control::__load_process_context();
         }
     }
+        // end measure 
+        unsafe {
+            let existing_value = ptr::read_volatile(tim2_cr1 as *mut u32);
+            ptr::write_volatile(tim2_cr1  as *mut u32, existing_value & !(0b1));
+            asm!("bkpt");
+        }
+        
 // }
 }
 
