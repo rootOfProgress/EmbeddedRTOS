@@ -20,12 +20,15 @@ pub mod tim2 {
         unsafe {
             let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
             ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
+            let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
+            ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value & !(0b1));
+            
         }
     }
     pub fn read_value() -> u32 {
         let timx_cnt: u32 = 0x4000_0000 | 0x24;
         unsafe {
-            ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)
+            (ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)) * 125
         }
     }
 }
@@ -229,9 +232,7 @@ pub mod gpio_driver {
 
             current_register_content &= !(0xF as u32) << pin * 4;
             current_register_content |= af_number << pin * 4;
-            unsafe {
-                asm!("bkpt");
-            }
+
             unsafe {
                 ptr::write_volatile(gpiox_af as *mut u32, current_register_content);
             }

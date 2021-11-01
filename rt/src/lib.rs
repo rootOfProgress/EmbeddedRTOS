@@ -10,7 +10,10 @@ pub mod sched;
 
 use core::panic::PanicInfo;
 use core::ptr;
+use core::mem::{MaybeUninit, zeroed};
 use interrupts::systick;
+
+use dev::tim2;
 
 fn enable_gpio_e_leds() {
     // see p 54 reg boundaries
@@ -44,12 +47,6 @@ fn setup_clock_system() {
         ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
     }
     
-    // TIM2 RESET -> p 166
-    let rcc_apb1rstr: u32 = 0x40021000 | 0x10;
-    unsafe {
-        let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
-        ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
-    }
 
     // USART1EN -> p 166
     let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
@@ -71,7 +68,27 @@ fn enable_serial_printing() {
     usart1.enable();
 }
 
-pub fn print_k(msg: &str) {
+// propably the world's worst and slowest function to print stupid integers on
+// a screen 
+pub fn print_dec(mut dec: u32) {
+    let usart2_tdr = 0x4001_3800 | 0x28;
+    let usart2_isr = 0x4001_3800 | 0x1C;
+    let mut buffer: [u8; 8] = unsafe { zeroed() };
+    let mut cnt: u8 = 0;
+    while dec > 0 {
+        buffer[cnt as usize] = (dec % 10 + 0x30) as u8;
+        dec /= 10;
+        cnt += 1;
+    }
+    for c in buffer.into_iter().rev() {
+        unsafe {
+            ptr::write_volatile(usart2_tdr as *mut u32, *c as u32);
+            while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
+        }
+    }
+}
+
+pub fn print_str(msg: &str) {
     let usart2_tdr = 0x4001_3800 | 0x28;
     let usart2_isr = 0x4001_3800 | 0x1C;
 
@@ -90,10 +107,8 @@ pub unsafe extern "C" fn Reset() -> ! {
     enable_serial_printing();
     systick::STK::set_up_systick(200);
     sched::scheduler::init_task_mng();
-    print_k("hello from rtos!...\n\r");
-    unsafe {
-        asm!("bkpt");
-    }
+    print_str("hello from rtos!...\n\r");
+
     extern "C" {
         static mut _sbss: u8;
         static mut _ebss: u8;
@@ -146,13 +161,7 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    // TODO: reduce overhead and make code more clear!!
-    // if !IS_WRITING.load(Ordering::Relaxed) {
-        let tim2_cr1: u32 = 0x4000_0000 | 0x00;
-    unsafe {
-        let existing_value = ptr::read_volatile(tim2_cr1 as *mut u32);
-        ptr::write_volatile(tim2_cr1  as *mut u32, existing_value | 0b1);
-    }
+    tim2::start_measurement();
     unsafe {
         __get_msp_entry();
         let msp_val: u32;
@@ -173,14 +182,12 @@ pub extern "C" fn SysTick() {
             ctrl::control::__load_process_context();
         }
     }
-        // end measure 
-        unsafe {
-            let existing_value = ptr::read_volatile(tim2_cr1 as *mut u32);
-            ptr::write_volatile(tim2_cr1  as *mut u32, existing_value & !(0b1));
-            asm!("bkpt");
-        }
-        
-// }
+    tim2::stop_measurement();
+    let t = tim2::read_value();
+    print_str("context switch took: ");
+    print_dec(t);
+    print_str(" ns\n\r");
+    tim2::reset_timer();
 }
 
 #[no_mangle]
