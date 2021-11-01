@@ -154,19 +154,18 @@ extern "C" {
     fn PendSV();
     fn __save_process_context();
     pub fn __exec(x: u32);
-    pub fn __exec_kernel(x: u32);
+    // pub fn __exec_kernel(x: u32);
     pub fn __set_exec_mode(y: u32);
-    pub fn __get_msp_entry();
+    pub fn __get_msp_entry() -> u32;
+    pub fn __load_process_context();
+    pub fn __set_exc_return();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    tim2::start_measurement();
+    // tim2::start_measurement();
     unsafe {
-        __get_msp_entry();
-        let msp_val: u32;
-        asm! ("mov {}, r0", out(reg) msp_val);
-        sched::scheduler::set_msp_entry(msp_val);
+        __set_exc_return();
     }
     if sched::scheduler::usr_is_running() {
         unsafe {
@@ -178,16 +177,15 @@ pub extern "C" fn SysTick() {
     sched::scheduler::context_switch();
     if sched::scheduler::usr_is_running() {
         unsafe {
-            __exec(sched::scheduler::get_msp_entry());
-            ctrl::control::__load_process_context();
+            __load_process_context();
         }
     }
-    tim2::stop_measurement();
-    let t = tim2::read_value();
-    print_str("context switch took: ");
-    print_dec(t);
-    print_str(" ns\n\r");
-    tim2::reset_timer();
+    // tim2::stop_measurement();
+    // let t = tim2::read_value();
+    // print_str("context switch took: ");
+    // print_dec(t);
+    // print_str(" ns\n\r");
+    // tim2::reset_timer();
 }
 
 #[no_mangle]

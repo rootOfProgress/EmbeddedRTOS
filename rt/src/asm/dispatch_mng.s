@@ -8,7 +8,7 @@
 .global __save_main_context
 .global __set_exec_mode
 .global	__exec_kernel
- 
+.global __set_exc_return
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -65,15 +65,12 @@ __exec:
 	// bkpt
 	bx lr
 
-
-__exec_kernel:
-	// bkpt
-	// sub r4, 
-	mrs r3, msp
-	sub r4, r0, r3
+__set_exc_return:
+	mrs r0, msp
+	sub r4, r7, r0
 	add r4, #0x04
-	// bkpt
-	mov r1, #0xfffffff9
+	mov r1, #0xfffffffd
 	str r1, [sp, r4]
-	bkpt
+	// bkpt
 	bx lr
+
