@@ -107,7 +107,7 @@ fn init() {
 }
 
 #[no_mangle]
-pub fn init_task_system() -> ! {
+pub fn main() -> ! {
     let process_0 = ProcessFrame::new(init as *const () as u32, init as *const () as u32);
     let process_1 = ProcessFrame::new(context1 as *const () as u32, context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32, context1 as *const () as u32);
@@ -121,6 +121,7 @@ pub fn init_task_system() -> ! {
     scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
 
     scheduler::immediate_start(process_0.r4);
+    loop {}
 }
 
 #[allow(non_snake_case)]
