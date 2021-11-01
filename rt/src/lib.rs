@@ -163,19 +163,10 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    // tim2::start_measurement();
     unsafe {
         __set_exc_return();
     }
-        unsafe {
-            __save_process_context();
-        }
-        sched::task_control::update_tasks_ptr(ctrl::control::read_process_stack_ptr());
-
     sched::scheduler::context_switch();
-        unsafe {
-            __load_process_context();
-        }
 }
 
 #[no_mangle]

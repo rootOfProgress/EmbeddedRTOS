@@ -108,9 +108,13 @@ pub mod task_control {
 pub mod scheduler {
     extern "C" {
         pub fn __write_psp(addr: u32);
+        fn __save_process_context();
+        fn __load_process_context();
+        fn __get_current_psp() -> u32;
+    
         // pub fn __exec();
     }
-    use crate::{__load_process_context, sched::task_control};
+    use crate::{sched::task_control};
 
     use crate::ctrl::control;
     use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -156,12 +160,11 @@ pub mod scheduler {
     pub fn context_switch() {
         let (task_addr, task_mode) = task_control::current_task();
         unsafe {
-            // asm!("bkpt");
+            __save_process_context();
+            task_control::update_tasks_ptr(__get_current_psp());
+            __write_psp(task_addr);
+            task_control::next_task();
+            __load_process_context();
         }
-        if task_mode == 0xFFFF {
-            IS_USER_TASK.store(true, Ordering::Relaxed);
-            run(task_addr);
-        } 
-        task_control::next_task();
     }
 }
