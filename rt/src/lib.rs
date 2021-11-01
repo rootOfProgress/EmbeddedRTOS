@@ -7,20 +7,12 @@ pub mod ctrl;
 mod interrupts;
 pub mod mem;
 pub mod sched;
-use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-static IS_WRITING: AtomicBool = AtomicBool::new(false);
 
 use core::panic::PanicInfo;
 use core::ptr;
 use interrupts::systick;
 
-fn foo() {
-    // turn on gpio clock
-    // see p 166 -> IOPAEN
-    let rcc_ahbenr = 0x40021000 | 0x14;
-    unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
-
-
+fn enable_gpio_e_leds() {
     // see p 54 reg boundaries
     let gpio_port_e11 = dev::gpio_driver::GpioX::new("E", 11);
     gpio_port_e11.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
@@ -28,59 +20,52 @@ fn foo() {
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 12);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
-
+    
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 14);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
-
+    
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 13);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
+}
 
+fn setup_clock_system() {
+    // turn on gpio clock
+    // see p 166 -> IOPAEN
+    let rcc_ahbenr = 0x40021000 | 0x14;
+    unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
+    
+    
     // p 166 tim2en
     let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1enr as *mut u32);
         ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
     }
-
+    
     let rcc_apb1rstr: u32 = 0x40021000 | 0x10;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
         ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
     }
-
     let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb2enr as *mut u32);
-        ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14));
+        ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14 | 0b1));
     }
+}
+
+fn enable_serial_printing() {
 
     let gpio_port_a0 = dev::gpio_driver::GpioX::new("A", 9);
     gpio_port_a0.set_moder(dev::gpio_types::ModerTypes::AlternateFunctionMode);
     gpio_port_a0.set_otyper(dev::gpio_types::OutputTypes::PushPull);
     gpio_port_a0.into_af(7);
 
-    let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
-    unsafe {
-        let existing_value = ptr::read_volatile(rcc_apb2enr as *mut u32);
-        ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14 | 0b1));
-    }
 
-    // let usart2_brr = 0x4001_3800 | 0x0C;
-    // unsafe {
-    //     // clk / 9600 baud
-    //     ptr::write_volatile(usart2_brr as *mut u32, 0x341);
-    // }
     let usart1 = dev::uart::new(1, 9600);
     usart1.enable();
-    // let usart1_cr1 = 0x4001_3800;
-    // unsafe {
-    //     let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-    //     ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
-    //     let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-    //     ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
-    // }
 }
 
 pub fn print_k(msg: &str) {
@@ -97,7 +82,9 @@ pub fn print_k(msg: &str) {
 
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
-    foo();
+    setup_clock_system();
+    enable_gpio_e_leds();
+    enable_serial_printing();
     systick::STK::set_up_systick(200);
     sched::scheduler::init_task_mng();
     print_k("hello from rtos!...\n\r");
