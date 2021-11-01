@@ -106,8 +106,11 @@ pub mod task_control {
 }
 
 pub mod scheduler {
-
-    use crate::sched::task_control;
+    extern "C" {
+        pub fn __write_psp(addr: u32);
+        // pub fn __exec();
+    }
+    use crate::{__load_process_context, sched::task_control};
 
     use crate::ctrl::control;
     use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -132,6 +135,13 @@ pub mod scheduler {
     }
     pub fn get_msp_entry() -> u32 {
         MSP_ENTRY.load(Ordering::Relaxed)
+    }
+
+    pub fn immediate_start(addr: u32) {
+        unsafe {
+            __write_psp(addr);
+            __load_process_context();
+        }
     }
 
     pub fn run(task_addr: u32) {

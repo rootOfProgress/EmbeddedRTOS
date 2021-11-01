@@ -125,10 +125,10 @@ pub unsafe extern "C" fn Reset() -> ! {
     ptr::copy_nonoverlapping(&_sidata as *const u8, &mut _sdata as *mut u8, count);
 
     extern "Rust" {
-        fn main() -> !;
+        fn init_task_system() -> !;
     }
 
-    main()
+    init_task_system()
 }
 
 #[link_section = ".vector_table.reset_vector"]

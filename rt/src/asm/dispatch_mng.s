@@ -9,6 +9,7 @@
 .global __set_exec_mode
 .global	__exec_kernel
 .global __set_exc_return
+.global __instant_start
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -44,6 +45,9 @@ __load_process_context:
 	msr psp, r0
 	bx lr
 
+__instant_start:
+	// ms lr, #0xfffffffd
+	bx pc
 
 __write_psp:
 	msr psp, r0

@@ -9,7 +9,7 @@ use rt::dev::tim2;
 
 #[repr(C)]
 pub struct ProcessFrame {
-    stuff: [u32; 64],
+    stuff: [u32; 256],
     r4: u32,
     r5: u32,
     r6: u32,
@@ -26,11 +26,10 @@ pub struct ProcessFrame {
     lr: u32,
     pc: u32,
     psr: u32,
-    stuff1: [u32; 64],
 }
 
 impl ProcessFrame {
-    pub fn new(target: u32) -> ProcessFrame {
+    pub fn new(target: u32, endpoint: u32) -> ProcessFrame {
         ProcessFrame {
             stuff: unsafe { mem::MaybeUninit::uninit().assume_init() },
             r4: 0x66a,
@@ -46,10 +45,9 @@ impl ProcessFrame {
             r2: 0xBB,
             r3: 0xCC,
             r12: 0x9978a,
-            lr: deschedule as *const () as u32,
+            lr: endpoint as *const () as u32,
             pc: target,
             psr: 0x21000000,
-            stuff1: unsafe { mem::MaybeUninit::uninit().assume_init() },
         }
     }
 }
@@ -104,20 +102,25 @@ fn context1() {
     }
 }
 
+fn init() {
+    loop {}
+}
+
 #[no_mangle]
-pub fn main() -> ! {
-    let process_1 = ProcessFrame::new(context1 as *const () as u32);
-    let process_2 = ProcessFrame::new(context2 as *const () as u32);
-    let process_3 = ProcessFrame::new(context3 as *const () as u32);
-    let process_4 = ProcessFrame::new(context4 as *const () as u32);
-    
+pub fn init_task_system() -> ! {
+    let process_0 = ProcessFrame::new(init as *const () as u32, init as *const () as u32);
+    let process_1 = ProcessFrame::new(context1 as *const () as u32, context1 as *const () as u32);
+    let process_2 = ProcessFrame::new(context2 as *const () as u32, context1 as *const () as u32);
+    let process_3 = ProcessFrame::new(context3 as *const () as u32, context1 as *const () as u32);
+    let process_4 = ProcessFrame::new(context4 as *const () as u32, context1 as *const () as u32);
+
+    scheduler::queue_task(ptr::addr_of!(process_0.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_1.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
     scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
-    
-    loop {
-    }
+
+    scheduler::immediate_start(process_0.r4);
 }
 
 #[allow(non_snake_case)]
