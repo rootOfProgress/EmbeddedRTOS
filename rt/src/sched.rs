@@ -126,9 +126,6 @@ pub mod scheduler {
 
     pub fn immediate_start(addr: *const u32) {
         unsafe {
-            asm!("bkpt");
-        }
-        unsafe {
             __load_process_context(addr as u32);
         }
     }
