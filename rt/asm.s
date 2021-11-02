@@ -10,6 +10,12 @@
 .global __syscall
 __syscall:
     svc 0;
+    mov r0, r5
+    bx lr
+
+.global __save_svc_result_to_r5
+__save_svc_result_to_r5:
+    mov r5, r0
     bx lr
 
 .global __sprint
@@ -28,11 +34,11 @@ __sprintc:
 
 .global __sreadc
 __sreadc:
-    mov r3, r0
+    @ mov r3, r0
     mov r1, #0x0
     mov r0, SYS_READC
     bkpt 0xAB ;
-    stm r3, {r0}
+    @ stm r3, {r0}
     bx lr
 
 .global __get_r0

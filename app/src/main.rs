@@ -8,29 +8,27 @@ mod dp;
 mod handler;
 mod kernel;
 
-use core::{
-    convert::TryInto,
-    ptr::{read_volatile, write_volatile},
-};
+use core::ptr::{read_volatile, write_volatile};
 
 use cp::stk::SystemTimer;
 use dp::bus::PERIPHERALS;
 use kernel::{
     sched::{init_scheduler, Scheduler},
-    svc::{sprint, SVC},
+    svc::{sprint, SvcResult, SVC},
 };
 
 static mut TOGGLE_FLAG: bool = false;
 
 extern "C" {
     pub fn __invoke(x: u32) -> u32;
-    pub fn __syscall(svc: &SVC);
+    pub fn __syscall(svc: &SVC) -> *mut SvcResult;
     pub fn __breakpoint();
     pub fn __save_psp() -> u32;
     pub fn __sprint(text: *const u8);
-    pub fn __sreadc(char: *const u8);
+    pub fn __sreadc() -> u8;
     pub fn __sprintc(char: *const u8);
     pub fn __get_r0() -> u32;
+    pub fn __save_svc_result_to_r5(result: *mut SvcResult);
 }
 
 #[no_mangle]
@@ -45,12 +43,13 @@ fn user_task() {
     leds.on(13);
 
     sprint("Enter LED [8 or 9]:\n");
-    let number = ' ' as u8;
     unsafe {
-        __syscall(&SVC::SYS_READC(&number));
-    }
-    // Ascii table numbers start at 48
-    leds.on(number - 48);
+        let result = __syscall(&SVC::SYS_READC);
+        if let SvcResult::Char(number) = *result {
+            // Ascii table numbers start at 48
+            leds.on(*&number - 48);
+        }
+    };
 
     loop {
         unsafe {
@@ -89,12 +88,6 @@ fn load_scheduler() {
 fn main() -> ! {
     let st = SystemTimer::take();
     st.set_reload(0x3FFFF).enable();
-
-    // unsafe {
-    //     let text_buffer = ' ' as u8;
-    //     __syscall(&SVC::SYS_READC(&text_buffer));
-    //     __syscall(&SVC::SYS_WRITEC(&text_buffer));
-    // }
 
     init_scheduler(load_scheduler);
 

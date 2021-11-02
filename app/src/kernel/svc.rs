@@ -1,23 +1,42 @@
 /// Supervisor Call
 ///
-use crate::{__get_r0, __sprint, __sprintc, __sreadc, __syscall};
+use crate::{__get_r0, __save_svc_result_to_r5, __sprint, __sprintc, __sreadc, __syscall};
 
 #[repr(C)]
 #[allow(non_camel_case_types)]
 pub enum SVC {
     SYS_WRITE0(*const u8),
     SYS_WRITEC(*const u8),
-    SYS_READC(*const u8),
+    SYS_READC,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub enum SvcResult {
+    None,
+    Char(u8),
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
-    let csv = unsafe { &*(__get_r0() as *const SVC) };
-    match csv {
-        SVC::SYS_WRITE0(text) => unsafe { __sprint(*text) },
-        SVC::SYS_WRITEC(char) => unsafe { __sprintc(*char) },
-        SVC::SYS_READC(char) => unsafe { __sreadc(*char) },
+    let svc = unsafe { &*(__get_r0() as *const SVC) };
+    let result: *mut SvcResult;
+    match svc {
+        SVC::SYS_WRITE0(text) => {
+            unsafe { __sprint(*text) }
+            result = &mut SvcResult::None
+        }
+        SVC::SYS_WRITEC(char) => {
+            unsafe { __sprintc(*char) }
+            result = &mut SvcResult::None
+        }
+        SVC::SYS_READC => unsafe {
+            result = &mut SvcResult::Char(__sreadc());
+        },
     }
+    unsafe {
+        __save_svc_result_to_r5(result);
+    };
 }
 
 pub fn sprint(text: &str) {
@@ -35,5 +54,7 @@ pub fn sprint(text: &str) {
         }
     }
 
-    unsafe { __syscall(&SVC::SYS_WRITE0(tmp_array.as_ptr())) };
+    unsafe {
+        __syscall(&SVC::SYS_WRITE0(tmp_array.as_ptr()));
+    };
 }
