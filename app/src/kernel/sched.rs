@@ -75,7 +75,7 @@ impl Scheduler {
         }
     }
 
-    pub fn add_user_task(&mut self, user_task: fn()) -> Result<(), ()> {
+    pub fn add_user_task(&mut self, user_task: fn() -> !) -> Result<(), ()> {
         let user_task_routine = ptr::addr_of!(user_task);
         match self
             .threads

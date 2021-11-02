@@ -31,7 +31,7 @@ extern "C" {
 }
 
 #[no_mangle]
-fn user_task() {
+fn user_task() -> ! {
     sprint("Task 1: Started\n");
     let serial = unsafe { PERIPHERALS.take_serial() };
     let mut ahb1 = serial.ahb1();
@@ -60,7 +60,7 @@ fn user_task() {
 }
 
 #[no_mangle]
-fn user_task_turn_off_led() {
+fn user_task_turn_off_led() -> ! {
     sprint("Task 2: Started\n");
     loop {
         unsafe {
