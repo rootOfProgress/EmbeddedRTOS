@@ -8,7 +8,10 @@ mod dp;
 mod handler;
 mod kernel;
 
-use core::ptr::{read_volatile, write_volatile};
+use core::{
+    convert::TryInto,
+    ptr::{read_volatile, write_volatile},
+};
 
 use cp::stk::SystemTimer;
 use dp::bus::PERIPHERALS;
@@ -25,28 +28,35 @@ extern "C" {
     pub fn __breakpoint();
     pub fn __save_psp() -> u32;
     pub fn __sprint(text: *const u8);
-    pub fn __sreadc();
+    pub fn __sreadc(char: *const u8);
     pub fn __sprintc(char: *const u8);
     pub fn __get_r0() -> u32;
-    pub fn __get_r5() -> u32;
 }
 
 #[no_mangle]
 fn user_task() {
-    sprint("Task 1 started\n");
+    sprint("Task 1: Started\n");
     let serial = unsafe { PERIPHERALS.take_serial() };
     let mut ahb1 = serial.ahb1();
     ahb1.rcc(|rcc| rcc.iopeen());
 
     let gpioe = serial.ahb2().gpioe();
     let mut leds = handler::LED::new(gpioe);
-    leds.on(9);
-    leds.on(8);
+    leds.on(13);
+
+    sprint("Enter LED [8 or 9]:\n");
+    let number = ' ' as u8;
+    unsafe {
+        __syscall(&SVC::SYS_READC(&number));
+    }
+    // Ascii table numbers start at 48
+    leds.on(number - 48);
+
     loop {
         unsafe {
             if TOGGLE_FLAG {
                 sprint("TASK 1: Toggle LED\n");
-                leds.toggle(9);
+                leds.toggle(13);
                 TOGGLE_FLAG = false;
             }
         }
@@ -55,13 +65,13 @@ fn user_task() {
 
 #[no_mangle]
 fn user_task_turn_off_led() {
-    sprint("Task 2 started\n");
+    sprint("Task 2: Started\n");
     loop {
         unsafe {
             if !TOGGLE_FLAG {
                 sprint("TASK 2: Set Toggle true\n");
+                TOGGLE_FLAG = true;
             }
-            TOGGLE_FLAG = true;
         }
     }
 }
@@ -80,11 +90,11 @@ fn main() -> ! {
     let st = SystemTimer::take();
     st.set_reload(0x3FFFF).enable();
 
-    unsafe {
-        __syscall(&SVC::SYS_READC);
-        let input_text = [__get_r5() as u8];
-        __syscall(&SVC::SYS_WRITEC(input_text.as_ptr()));
-    }
+    // unsafe {
+    //     let text_buffer = ' ' as u8;
+    //     __syscall(&SVC::SYS_READC(&text_buffer));
+    //     __syscall(&SVC::SYS_WRITEC(&text_buffer));
+    // }
 
     init_scheduler(load_scheduler);
 

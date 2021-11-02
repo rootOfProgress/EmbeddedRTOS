@@ -7,7 +7,7 @@ use crate::{__get_r0, __sprint, __sprintc, __sreadc, __syscall};
 pub enum SVC {
     SYS_WRITE0(*const u8),
     SYS_WRITEC(*const u8),
-    SYS_READC,
+    SYS_READC(*const u8),
 }
 
 #[no_mangle]
@@ -15,8 +15,8 @@ pub extern "C" fn SVCall() {
     let csv = unsafe { &*(__get_r0() as *const SVC) };
     match csv {
         SVC::SYS_WRITE0(text) => unsafe { __sprint(*text) },
-        SVC::SYS_READC => unsafe { __sreadc() },
         SVC::SYS_WRITEC(char) => unsafe { __sprintc(*char) },
+        SVC::SYS_READC(char) => unsafe { __sreadc(*char) },
     }
 }
 

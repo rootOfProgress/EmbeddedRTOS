@@ -28,15 +28,11 @@ __sprintc:
 
 .global __sreadc
 __sreadc:
+    mov r3, r0
     mov r1, #0x0
     mov r0, SYS_READC
     bkpt 0xAB ;
-    mov r5, r0
-    bx lr
-
-.global __get_r5
-__get_r5:
-    mov r0, r5
+    stm r3, {r0}
     bx lr
 
 .global __get_r0
