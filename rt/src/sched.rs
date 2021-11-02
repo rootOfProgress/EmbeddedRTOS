@@ -129,7 +129,6 @@ pub mod scheduler {
             asm!("bkpt");
         }
         unsafe {
-            // __write_psp(addr as u32);
             __load_process_context(addr as u32);
         }
     }
@@ -139,7 +138,6 @@ pub mod scheduler {
         unsafe {
             __save_process_context();
             task_control::update_tasks_ptr(__get_current_psp());
-            // __write_psp(task_addr);
             task_control::next_task();
             __load_process_context(task_addr);
         }
