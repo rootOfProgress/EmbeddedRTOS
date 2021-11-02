@@ -1,18 +1,16 @@
 /// Supervisor Call
 ///
-use crate::{__breakpoint, __get_r0, __sprint, __sprintc, __sreadc, __syscall};
+use crate::{__get_r0, __sprint, __sprintc, __sreadc, __syscall};
 
 #[repr(C)]
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy)]
 pub enum SvcRequest {
     SYS_WRITE0(*const u8),
-    SYS_WRITEC(*const u8),
+    _SYS_WRITEC(*const u8),
     SYS_READC,
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
 pub enum SvcResult {
     None,
     Char(u8),
@@ -25,9 +23,9 @@ pub struct SvcOrder {
 }
 
 #[no_mangle]
-pub fn syscall(svc: &SvcRequest) -> SvcResult {
+pub fn syscall(request: SvcRequest) -> SvcResult {
     let order = SvcOrder {
-        request: *svc,
+        request,
         response: SvcResult::None,
     };
 
@@ -45,7 +43,7 @@ pub extern "C" fn SVCall() {
             unsafe { __sprint(text) }
             order.response = SvcResult::None;
         }
-        SvcRequest::SYS_WRITEC(char) => {
+        SvcRequest::_SYS_WRITEC(char) => {
             unsafe { __sprintc(char) }
             order.response = SvcResult::None;
         }
@@ -70,5 +68,5 @@ pub fn sprint(text: &str) {
         }
     }
 
-    syscall(&SvcRequest::SYS_WRITE0(tmp_array.as_ptr()));
+    syscall(SvcRequest::SYS_WRITE0(tmp_array.as_ptr()));
 }

@@ -42,7 +42,7 @@ fn user_task() {
     leds.on(13);
 
     sprint("Enter LED [8 or 9]:\n");
-    let result = syscall(&SvcRequest::SYS_READC);
+    let result = syscall(SvcRequest::SYS_READC);
     if let SvcResult::Char(number) = result {
         // Ascii table numbers start at 48
         leds.on(*&number - 48);
