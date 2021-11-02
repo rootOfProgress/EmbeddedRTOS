@@ -14,21 +14,20 @@ use cp::stk::SystemTimer;
 use dp::bus::PERIPHERALS;
 use kernel::{
     sched::{init_scheduler, Scheduler},
-    svc::{sprint, SvcResult, SVC},
+    svc::{sprint, syscall, SvcOrder, SvcRequest, SvcResult},
 };
 
 static mut TOGGLE_FLAG: bool = false;
 
 extern "C" {
     pub fn __invoke(x: u32) -> u32;
-    pub fn __syscall(svc: &SVC) -> *mut SvcResult;
+    pub fn __syscall(order: *const SvcOrder) -> *mut SvcResult;
     pub fn __breakpoint();
     pub fn __save_psp() -> u32;
     pub fn __sprint(text: *const u8);
     pub fn __sreadc() -> u8;
     pub fn __sprintc(char: *const u8);
-    pub fn __get_r0() -> u32;
-    pub fn __save_svc_result_to_r5(result: *mut SvcResult);
+    pub fn __get_r0() -> *mut SvcOrder;
 }
 
 #[no_mangle]
@@ -43,13 +42,11 @@ fn user_task() {
     leds.on(13);
 
     sprint("Enter LED [8 or 9]:\n");
-    unsafe {
-        let result = __syscall(&SVC::SYS_READC);
-        if let SvcResult::Char(number) = *result {
-            // Ascii table numbers start at 48
-            leds.on(*&number - 48);
-        }
-    };
+    let result = syscall(&SvcRequest::SYS_READC);
+    if let SvcResult::Char(number) = result {
+        // Ascii table numbers start at 48
+        leds.on(*&number - 48);
+    }
 
     loop {
         unsafe {
