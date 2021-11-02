@@ -27,7 +27,7 @@ extern "C" {
     pub fn __sprint(text: *const u8);
     pub fn __sreadc() -> u8;
     pub fn __sprintc(char: *const u8);
-    pub fn __get_r0() -> *mut SvcOrder;
+    pub fn __get_r0() -> *mut u32;
 }
 
 #[no_mangle]

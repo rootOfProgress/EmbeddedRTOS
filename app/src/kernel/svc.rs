@@ -37,7 +37,7 @@ pub fn syscall(request: SvcRequest) -> SvcResult {
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
-    let mut order = unsafe { &mut *(__get_r0()) };
+    let mut order: &mut SvcOrder = unsafe { &mut *(__get_r0() as *mut SvcOrder) };
     match order.request {
         SvcRequest::SYS_WRITE0(text) => {
             unsafe { __sprint(text) }
