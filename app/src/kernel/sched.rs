@@ -3,7 +3,7 @@ use core::{
     ptr::{self, addr_of},
 };
 
-use crate::{__breakpoint, __invoke, __save_psp};
+use crate::{__invoke, __save_psp};
 use ProcessState::*;
 /// # Scheduler
 

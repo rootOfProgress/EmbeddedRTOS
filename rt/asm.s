@@ -2,25 +2,46 @@
 .syntax unified
 .thumb
 
+// ARM semihosting operations
+.equ SYS_WRITEC, 0x03
+.equ SYS_WRITE0, 0x04
+.equ SYS_READC,  0x07
+
 .global __syscall
 __syscall:
+    svc 0;
     bx lr
 
 .global __sprint
 __sprint:
-    svc 1 ;
-    bx lr
-    
-
-.type SVCall, %function
-.global SVCall
-SVCall:
-    push {lr}
     mov r1, r0
-    mov r0, #0x04
+    mov r0, SYS_WRITE0
     bkpt 0xAB ;
-    pop {pc}
+    bx lr
 
+.global __sprintc
+__sprintc:
+    mov r1, r0
+    mov r0, SYS_WRITEC
+    bkpt 0xAB ;
+    bx lr
+
+.global __sreadc
+__sreadc:
+    mov r1, #0x0
+    mov r0, SYS_READC
+    bkpt 0xAB ;
+    mov r5, r0
+    bx lr
+
+.global __get_r5
+__get_r5:
+    mov r0, r5
+    bx lr
+
+.global __get_r0
+__get_r0:
+    bx lr
 
 .global __invoke
 __invoke:
