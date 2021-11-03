@@ -3,9 +3,9 @@
 #![feature(asm)]
 extern crate rt;
 use core::*;
-use rt::sched::scheduler;
 use rt::interrupts;
-use rt::{print_dec, print_str};    
+use rt::sched::{scheduler, task_control};
+// use rt::{print_dec, print_str};
 use rt::dev::tim2;
 
 #[repr(C)]
@@ -83,7 +83,6 @@ fn context3() {
 
 fn context2() {
     loop {
-
         // print_k("running context -> 2...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -104,24 +103,42 @@ fn context1() {
 }
 
 fn init() {
-    loop {}
+    loop {
+        unsafe {
+            let mut reg_content = 0x0000_0000;
+            reg_content |= (0b1_u32) << 10;
+            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        }
+    }
 }
 
 #[no_mangle]
 pub fn main() -> ! {
-    let process_0 = ProcessFrame::new(init as *const () as u32, init as *const () as u32);
+    // let process_0 = ProcessFrame::new(init as *const () as u32, init as *const () as u32);
     let process_1 = ProcessFrame::new(context1 as *const () as u32, context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32, context1 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32, context1 as *const () as u32);
     let process_4 = ProcessFrame::new(context4 as *const () as u32, context1 as *const () as u32);
 
-    scheduler::queue_task(ptr::addr_of!(process_0.r4) as u32, true);
-    scheduler::queue_task(ptr::addr_of!(process_1.r4) as u32, true);
-    scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
-    scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
-    scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
+    // scheduler::queue_task(ptr::addr_of!(process_0.r4) as u32, true);
+    // scheduler::queue_task(ptr::addr_of!(process_1.r4) as u32, true);
+    // scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
+    // scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
+    // scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
+    // task_control::init();
+    // task_control::insert(ptr::addr_of!(process_0.r4) as u32, 0);
+    task_control::insert(ptr::addr_of!(process_1.r4) as u32, 1);
+    task_control::insert(ptr::addr_of!(process_2.r4) as u32, 2);
+    task_control::insert(ptr::addr_of!(process_3.r4) as u32, 3);
+    task_control::insert(ptr::addr_of!(process_4.r4) as u32, 4);
 
-    scheduler::immediate_start(ptr::addr_of!(process_0.r4));
+    // task_control::print();
+
+    scheduler::immediate_start(ptr::addr_of!(process_1.r4));
+    unsafe {
+        asm!("svc 0");
+    }
+
     loop {}
 }
 

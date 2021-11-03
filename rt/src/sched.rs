@@ -1,5 +1,21 @@
 pub mod task_control {
-    use crate::mem;
+    use crate::dev::uart::{self, print_str};
+    use crate::{dev::uart::print_dec, mem};
+    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    enum TaskStates {
+        READY,
+        RUNNING,
+        BLOCKED,
+        TERMINATED,
+    }
+
+    #[repr(C)]
+    #[repr(align(4))]
+    pub struct TCB {
+        sp: u32,
+        state: TaskStates,
+        pid: u32,
+    }
 
     enum VecMeta {
         MAGIC,
@@ -9,6 +25,12 @@ pub mod task_control {
         FLUSH,
     }
 
+    const TCB_START: u32 = 0x2000_0200;
+    static HEAP_SIZE: AtomicU32 = AtomicU32::new(0);
+    static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
+    const TCB_SIZE: u32 = core::mem::size_of::<TCB>() as u32;
+
+    const NUM_TASKS: u32 = 5;
     const VECTOR_START: u32 = 0x2000_0100;
     const ADR_OFFSET: u32 = 0x04;
     const DATA_START: u32 = 0x2000_0104;
@@ -29,9 +51,7 @@ pub mod task_control {
 
         match v_type {
             VecMeta::MAGIC => mem::memory_handler::write(VECTOR_START, vec_meta | (value << 24)),
-            VecMeta::PREV => {
-                mem::memory_handler::write(VECTOR_START, vec_meta | (value << 16))
-            }
+            VecMeta::PREV => mem::memory_handler::write(VECTOR_START, vec_meta | (value << 16)),
             VecMeta::CURRENT => mem::memory_handler::write(VECTOR_START, vec_meta | (value << 8)),
             VecMeta::SIZE => {
                 mem::memory_handler::write(VECTOR_START, (vec_meta & !(0xFF)) | (value << 0))
@@ -73,14 +93,17 @@ pub mod task_control {
         );
         // size == current, go to 0
         if vec_meta.2 == (vec_meta.3 - 1) {
-            mem::memory_handler::write(VECTOR_START, mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00));
+            mem::memory_handler::write(
+                VECTOR_START,
+                mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00),
+            );
         } else {
             mem::memory_handler::write(
                 VECTOR_START,
-                (mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00)) | (((vec_meta.2 + 0b1) as u32) << 8),
+                (mem::memory_handler::read(VECTOR_START) & !(0x0000_FF00))
+                    | (((vec_meta.2 + 0b1) as u32) << 8),
             );
         }
-
     }
 
     pub fn insert_task(addr: u32, is_user: bool) {
@@ -96,6 +119,74 @@ pub mod task_control {
         write_meta((vec_meta.3 + 0x01) as u32, VecMeta::SIZE);
     }
 
+    pub fn print() {
+        let tcb_size = core::mem::size_of::<TCB>();
+        let tcb_location = unsafe { core::ptr::read_volatile(TCB_START as *const u32) };
+        for tcb_addr in
+            (TCB_START..(TCB_START + (NUM_TASKS * tcb_size as u32) as u32)).step_by(tcb_size)
+        {
+            let tcb = unsafe { &mut *(tcb_addr as *mut Option<TCB>) };
+            match tcb {
+                Some(tcb) => {
+                    uart::print_dec(tcb.pid);
+                    uart::print_str("\n\r");
+                    unsafe {
+                        asm! {"bkpt"}
+                    }
+                }
+                None => {}
+            }
+        }
+    }
+
+    pub fn next_process() -> u32 {
+        let current = CURRENT_TASK.fetch_add(1, Ordering::Relaxed) as u32;
+        let next = (current + 1) % HEAP_SIZE.load(Ordering::Relaxed);
+        let target_tcb_adress = (next * TCB_SIZE) + TCB_START;
+        let tcb = unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) };
+
+        CURRENT_TASK.store(next, Ordering::Relaxed);
+
+        match tcb {
+            Some(t) => t.sp,
+            None => 0x00,
+        }
+    }
+
+    pub fn current_process() -> u32 {
+        let current = CURRENT_TASK.load(Ordering::Relaxed) as u32;
+        let entry_target = (current * TCB_SIZE) + TCB_START;
+        let tcb = unsafe { &mut *(entry_target as *mut Option<TCB>) };
+        match tcb {
+            Some(t) => t.sp,
+            None => 0x00,
+        }
+    }
+
+    pub fn update_sp(new_sp: u32) {
+        let current = CURRENT_TASK.load(Ordering::Relaxed) as u32;
+        let entry_target = (current * TCB_SIZE) + TCB_START;
+        let tcb = unsafe { &mut *(entry_target as *mut Option<TCB>) };
+        *tcb = Some(TCB {
+            sp: new_sp,
+            state: TaskStates::READY,
+            pid: current,
+        });
+    }
+
+    pub fn insert(stack_pointer: u32, pid: u32) {
+        let entry_target = (HEAP_SIZE.load(Ordering::Relaxed) as u32 * TCB_SIZE) + TCB_START;
+        let tcb = unsafe { &mut *(entry_target as *mut Option<TCB>) };
+
+        *tcb = Some(TCB {
+            sp: stack_pointer,
+            state: TaskStates::READY,
+            pid,
+        });
+
+        HEAP_SIZE.fetch_add(1, Ordering::Relaxed);
+    }
+
     pub fn set_up() {
         write_meta(0x0000_0000, VecMeta::FLUSH);
         write_meta(0xFF, VecMeta::MAGIC);
@@ -106,16 +197,20 @@ pub mod task_control {
 }
 
 pub mod scheduler {
+    static USR_RUNS: AtomicBool = AtomicBool::new(false);
+    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+
     extern "C" {
         pub fn __write_psp(addr: u32);
         fn __save_process_context();
         fn __load_process_context(addr: u32);
         fn __get_current_psp() -> u32;
-    
+
         // pub fn __exec();
     }
-    use crate::{sched::task_control};
+    use crate::sched::task_control;
 
+    use super::task_control::next_process;
     pub fn init_task_mng() {
         task_control::set_up();
     }
@@ -131,12 +226,23 @@ pub mod scheduler {
     }
 
     pub fn context_switch() {
-        let (task_addr, task_mode) = task_control::current_task();
+        // if USR_RUNS.load(Ordering::Relaxed) {
+            unsafe {
+                __save_process_context();
+                task_control::update_sp(__get_current_psp());
+            }
+        // }
         unsafe {
-            __save_process_context();
-            task_control::update_tasks_ptr(__get_current_psp());
-            task_control::next_task();
-            __load_process_context(task_addr);
+            let next = next_process();
+            __load_process_context(next);
         }
+        // USR_RUNS.store(true, Ordering::Relaxed);
+
+        // store state and stack pointer of current process
+        // task_control::next_task();
+        // get next task in row
+        // unsafe {
+        //     asm! {"bkpt"}
+        // }
     }
 }

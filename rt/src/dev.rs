@@ -5,13 +5,13 @@ pub mod tim2 {
     pub fn start_measurement() {
         unsafe {
             let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
-            ptr::write_volatile(TIM2_CR1  as *mut u32, existing_value | 0b1);
+            ptr::write_volatile(TIM2_CR1 as *mut u32, existing_value | 0b1);
         }
     }
     pub fn stop_measurement() {
         unsafe {
             let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
-            ptr::write_volatile(TIM2_CR1  as *mut u32, existing_value & !(0b1));
+            ptr::write_volatile(TIM2_CR1 as *mut u32, existing_value & !(0b1));
         }
     }
     pub fn reset_timer() {
@@ -22,14 +22,11 @@ pub mod tim2 {
             ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
             let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
             ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value & !(0b1));
-            
         }
     }
     pub fn read_value() -> u32 {
         let timx_cnt: u32 = 0x4000_0000 | 0x24;
-        unsafe {
-            (ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)) * 125
-        }
+        unsafe { (ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)) * 125 }
     }
 }
 
@@ -67,6 +64,38 @@ pub mod uart {
                 ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
                 let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
                 ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
+            }
+        }
+    }
+
+    // propably the world's worst and slowest function to print stupid integers on
+    // a screen
+    pub fn print_dec(mut dec: u32) {
+        let usart2_tdr = 0x4001_3800 | 0x28;
+        let usart2_isr = 0x4001_3800 | 0x1C;
+        let mut buffer: [u8; 32] = unsafe { core::mem::zeroed() };
+        let mut cnt: u8 = 0;
+        while dec > 0 {
+            buffer[cnt as usize] = (dec % 10 + 0x30) as u8;
+            dec /= 10;
+            cnt += 1;
+        }
+        for c in buffer.into_iter().rev() {
+            unsafe {
+                ptr::write_volatile(usart2_tdr as *mut u32, *c as u32);
+                while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
+            }
+        }
+    }
+
+    pub fn print_str(msg: &str) {
+        let usart2_tdr = 0x4001_3800 | 0x28;
+        let usart2_isr = 0x4001_3800 | 0x1C;
+
+        for c in msg.chars() {
+            unsafe {
+                ptr::write_volatile(usart2_tdr as *mut u32, c as u32);
+                while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
             }
         }
     }

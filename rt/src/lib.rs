@@ -6,7 +6,6 @@ pub mod dev;
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
-
 use core::panic::PanicInfo;
 use core::ptr;
 use core::mem::{MaybeUninit, zeroed};
@@ -66,46 +65,14 @@ fn enable_serial_printing() {
     usart1.enable();
 }
 
-// propably the world's worst and slowest function to print stupid integers on
-// a screen 
-pub fn print_dec(mut dec: u32) {
-    let usart2_tdr = 0x4001_3800 | 0x28;
-    let usart2_isr = 0x4001_3800 | 0x1C;
-    let mut buffer: [u8; 8] = unsafe { zeroed() };
-    let mut cnt: u8 = 0;
-    while dec > 0 {
-        buffer[cnt as usize] = (dec % 10 + 0x30) as u8;
-        dec /= 10;
-        cnt += 1;
-    }
-    for c in buffer.into_iter().rev() {
-        unsafe {
-            ptr::write_volatile(usart2_tdr as *mut u32, *c as u32);
-            while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
-        }
-    }
-}
-
-pub fn print_str(msg: &str) {
-    let usart2_tdr = 0x4001_3800 | 0x28;
-    let usart2_isr = 0x4001_3800 | 0x1C;
-
-    for c in msg.chars() {
-        unsafe {
-            ptr::write_volatile(usart2_tdr as *mut u32, c as u32);
-            while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
-        }
-    }
-}
-
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     setup_clock_system();
     enable_gpio_e_leds();
     enable_serial_printing();
-    interrupts::systick::STK::set_up_systick(200);
+    interrupts::systick::STK::set_up_systick(30);
     sched::scheduler::init_task_mng();
-    print_str("hello from rtos!...\n\r");
+    dev::uart::print_str("hello from rtos!...\n\r");
 
     extern "C" {
         static mut _sbss: u8;
@@ -162,7 +129,12 @@ pub extern "C" fn SysTick() {
 }
 
 #[no_mangle]
-pub extern "C" fn SVCall() {}
+pub extern "C" fn SVCall() {
+    unsafe {
+        __set_exc_return();
+    }
+
+}
 
 #[no_mangle]
 pub extern "C" fn DefaultExceptionHandler() {
