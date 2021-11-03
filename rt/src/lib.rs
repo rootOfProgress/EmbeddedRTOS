@@ -71,7 +71,6 @@ pub unsafe extern "C" fn Reset() -> ! {
     enable_gpio_e_leds();
     enable_serial_printing();
     interrupts::systick::STK::set_up_systick(30);
-    sched::scheduler::init_task_mng();
     dev::uart::print_str("hello from rtos!...\n\r");
 
     extern "C" {
