@@ -114,25 +114,14 @@ fn init() {
 
 #[no_mangle]
 pub fn main() -> ! {
-    // let process_0 = ProcessFrame::new(init as *const () as u32, init as *const () as u32);
     let process_1 = ProcessFrame::new(context1 as *const () as u32, context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32, context1 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32, context1 as *const () as u32);
     let process_4 = ProcessFrame::new(context4 as *const () as u32, context1 as *const () as u32);
-
-    // scheduler::queue_task(ptr::addr_of!(process_0.r4) as u32, true);
-    // scheduler::queue_task(ptr::addr_of!(process_1.r4) as u32, true);
-    // scheduler::queue_task(ptr::addr_of!(process_2.r4) as u32, true);
-    // scheduler::queue_task(ptr::addr_of!(process_3.r4) as u32, true);
-    // scheduler::queue_task(ptr::addr_of!(process_4.r4) as u32, true);
-    // task_control::init();
-    // task_control::insert(ptr::addr_of!(process_0.r4) as u32, 0);
-    task_control::insert(ptr::addr_of!(process_1.r4) as u32, 1);
-    task_control::insert(ptr::addr_of!(process_2.r4) as u32, 2);
-    task_control::insert(ptr::addr_of!(process_3.r4) as u32, 3);
-    task_control::insert(ptr::addr_of!(process_4.r4) as u32, 4);
-
-    // task_control::print();
+    task_control::insert(ptr::addr_of!(process_1.r4) as u32);
+    task_control::insert(ptr::addr_of!(process_2.r4) as u32);
+    task_control::insert(ptr::addr_of!(process_3.r4) as u32);
+    task_control::insert(ptr::addr_of!(process_4.r4) as u32);
 
     scheduler::immediate_start(ptr::addr_of!(process_1.r4));
     unsafe {

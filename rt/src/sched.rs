@@ -1,7 +1,5 @@
 pub mod task_control {
-    use crate::dev::uart::{self, print_str};
-    use crate::{dev::uart::print_dec, mem};
-    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use core::sync::atomic::{AtomicU32, Ordering};
     enum TaskStates {
         READY,
         RUNNING,
@@ -17,40 +15,10 @@ pub mod task_control {
         pid: u32,
     }
 
-    enum VecMeta {
-        MAGIC,
-        PREV,
-        CURRENT,
-        SIZE,
-        FLUSH,
-    }
-
     const TCB_START: u32 = 0x2000_0200;
     static HEAP_SIZE: AtomicU32 = AtomicU32::new(0);
     static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
     const TCB_SIZE: u32 = core::mem::size_of::<TCB>() as u32;
-
-    const NUM_TASKS: u32 = 5;
-
-    pub fn print() {
-        let tcb_size = core::mem::size_of::<TCB>();
-        let tcb_location = unsafe { core::ptr::read_volatile(TCB_START as *const u32) };
-        for tcb_addr in
-            (TCB_START..(TCB_START + (NUM_TASKS * tcb_size as u32) as u32)).step_by(tcb_size)
-        {
-            let tcb = unsafe { &mut *(tcb_addr as *mut Option<TCB>) };
-            match tcb {
-                Some(tcb) => {
-                    uart::print_dec(tcb.pid);
-                    uart::print_str("\n\r");
-                    unsafe {
-                        asm! {"bkpt"}
-                    }
-                }
-                None => {}
-            }
-        }
-    }
 
     pub fn next_process() -> u32 {
         let current = CURRENT_TASK.fetch_add(1, Ordering::Relaxed) as u32;
@@ -87,17 +55,19 @@ pub mod task_control {
         });
     }
 
-    pub fn insert(stack_pointer: u32, pid: u32) {
-        let entry_target = (HEAP_SIZE.load(Ordering::Relaxed) as u32 * TCB_SIZE) + TCB_START;
+    pub fn insert(stack_pointer: u32) -> u32 {
+        let pid = HEAP_SIZE.load(Ordering::Relaxed);
+        let entry_target = (pid * TCB_SIZE) + TCB_START;
         let tcb = unsafe { &mut *(entry_target as *mut Option<TCB>) };
 
         *tcb = Some(TCB {
             sp: stack_pointer,
             state: TaskStates::READY,
-            pid,
+            pid
         });
 
         HEAP_SIZE.fetch_add(1, Ordering::Relaxed);
+        pid
     }
 }
 
