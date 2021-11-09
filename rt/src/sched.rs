@@ -68,6 +68,10 @@ pub mod task_control {
         }
     }
 
+    pub fn terminate_task() {
+        
+    }
+
     pub fn insert(stack_pointer: u32) -> u32 {
         let pid = HEAP_SIZE.load(Ordering::Relaxed);
         let entry_target = (pid * TCB_SIZE) + TCB_START;

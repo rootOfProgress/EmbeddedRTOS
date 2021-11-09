@@ -30,7 +30,7 @@ pub struct ProcessFrame {
 }
 
 impl ProcessFrame {
-    pub fn new(target: u32, endpoint: u32) -> ProcessFrame {
+    pub fn new(target: u32) -> ProcessFrame {
         ProcessFrame {
             free_space: unsafe { mem::zeroed() },
             r4: 0x66a,
@@ -46,7 +46,7 @@ impl ProcessFrame {
             r2: 0xBB,
             r3: 0xCC,
             r12: 0x9978a,
-            lr: endpoint as *const () as u32,
+            lr: task_control::terminate_task as *const () as u32,
             pc: target,
             psr: 0x21000000,
         }
@@ -121,10 +121,10 @@ fn _init() {
 
 #[no_mangle]
 pub fn main() -> ! {
-    let process_1 = ProcessFrame::new(context1 as *const () as u32, deschedule as *const () as u32);
-    let process_2 = ProcessFrame::new(context2 as *const () as u32, deschedule as *const () as u32);
-    let process_3 = ProcessFrame::new(context3 as *const () as u32, deschedule as *const () as u32);
-    let process_4 = ProcessFrame::new(context4 as *const () as u32, deschedule as *const () as u32);
+    let process_1 = ProcessFrame::new(context1 as *const () as u32);
+    let process_2 = ProcessFrame::new(context2 as *const () as u32);
+    let process_3 = ProcessFrame::new(context3 as *const () as u32);
+    let process_4 = ProcessFrame::new(context4 as *const () as u32);
     task_control::insert(ptr::addr_of!(process_1.r4) as u32);
     task_control::insert(ptr::addr_of!(process_2.r4) as u32);
     task_control::insert(ptr::addr_of!(process_3.r4) as u32);
