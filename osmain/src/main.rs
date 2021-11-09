@@ -48,7 +48,7 @@ impl ProcessFrame {
             r2: 0xBB,
             r3: 0xCC,
             r12: 0x9978a,
-            lr: task_control::terminate_task as *const () as u32,
+            lr: call_api::terminate as *const () as u32,
             pc: target,
             psr: 0x21000000,
         }
@@ -101,7 +101,7 @@ fn context2() {
     }
 }
 fn context1() {
-    loop {
+    // loop {
         tim2::start_measurement();
         fibonacci(20);
         tim2::stop_measurement();
@@ -110,7 +110,7 @@ fn context1() {
         print_dec(t);
         print_str(" ms\n\r");
         tim2::reset_timer();
-    }
+    // }
 }
 
 fn _init() {

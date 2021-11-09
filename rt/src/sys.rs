@@ -13,9 +13,17 @@ pub mod call_api {
             __trap(0);
         }
     }
+
     pub fn yield_task() {
         unsafe {
             __trap(1);
         }
     }
+
+    pub fn terminate(){
+        unsafe {
+            __trap(2);
+        }       
+    }
+
 }

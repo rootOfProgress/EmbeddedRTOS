@@ -37,6 +37,9 @@ pub mod task_control {
                 TaskStates::BLOCKED => {
                     sp_of_next_process = next_process();
                 }
+                TaskStates::TERMINATED => {
+                    sp_of_next_process = next_process();
+                }
                 _ => {
                     sp_of_next_process = t.sp;
                 }
@@ -69,7 +72,13 @@ pub mod task_control {
     }
 
     pub fn terminate_task() {
-        
+        let current = CURRENT_TASK.load(Ordering::Relaxed) as u32;
+        let target_tcb_adress = (current * TCB_SIZE) + TCB_START;
+        let tcb = unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) };
+        match tcb {
+            Some(t) => t.state = TaskStates::TERMINATED,
+            None => {}
+        }
     }
 
     pub fn insert(stack_pointer: u32) -> u32 {
