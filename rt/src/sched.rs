@@ -27,11 +27,25 @@ pub mod task_control {
         let tcb = unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) };
 
         CURRENT_TASK.store(next, Ordering::Relaxed);
-
+        let sp_of_next_process: u32;
         match tcb {
-            Some(t) => t.sp,
-            None => 0x00,
+            Some(t) => match t.state {
+                TaskStates::READY => {
+                    sp_of_next_process = t.sp;
+                    t.state = TaskStates::RUNNING
+                }
+                TaskStates::BLOCKED => {
+                    sp_of_next_process = next_process();
+                }
+                _ => {
+                    sp_of_next_process = t.sp;
+                }
+            },
+            None => {
+                sp_of_next_process = 0x00;
+            }
         }
+        sp_of_next_process
     }
 
     pub fn current_process() -> u32 {
@@ -48,11 +62,10 @@ pub mod task_control {
         let current = CURRENT_TASK.load(Ordering::Relaxed) as u32;
         let entry_target = (current * TCB_SIZE) + TCB_START;
         let tcb = unsafe { &mut *(entry_target as *mut Option<TCB>) };
-        *tcb = Some(TCB {
-            sp: new_sp,
-            state: TaskStates::READY,
-            pid: current,
-        });
+        match tcb {
+            Some(t) => t.sp = new_sp,
+            None => {}
+        }
     }
 
     pub fn insert(stack_pointer: u32) -> u32 {
