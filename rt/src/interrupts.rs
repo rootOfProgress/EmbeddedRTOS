@@ -52,4 +52,22 @@ pub mod systick {
             }
         }
     }
+    pub fn disable_systick() {
+        unsafe {
+            let mut existing_val = ptr::read_volatile(STK_CTRL as *const u32);
+
+            existing_val &= !(0b1);
+
+            ptr::write_volatile(STK_CTRL as *mut u32, existing_val);
+        }
+    }
+    pub fn enable_systick() {
+        unsafe {
+            let mut existing_val = ptr::read_volatile(STK_CTRL as *const u32);
+
+            existing_val |= 0b1;
+
+            ptr::write_volatile(STK_CTRL as *mut u32, existing_val);
+        }
+    }
 }

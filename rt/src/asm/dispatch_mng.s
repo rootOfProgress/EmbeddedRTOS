@@ -10,6 +10,7 @@
 .global	__exec_kernel
 .global __set_exc_return
 .global __instant_start
+.global __trap
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -48,6 +49,11 @@ __load_process_context:
 __instant_start:
 	// ms lr, #0xfffffffd
 	bx pc
+
+__trap:
+	mov r2, r0
+	svc 0
+	bx lr
 
 __write_psp:
 	msr psp, r0

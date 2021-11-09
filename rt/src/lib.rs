@@ -6,8 +6,11 @@ pub mod dev;
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
+pub mod sys;
 use core::mem::{zeroed, MaybeUninit};
 use core::panic::PanicInfo;
+use interrupts::systick::{disable_systick, enable_systick};
+// use rt:
 use core::ptr;
 
 use dev::tim2;
@@ -71,11 +74,10 @@ pub unsafe extern "C" fn Reset() -> ! {
     enable_serial_printing();
     // interrupts::systick::STK::set_up_systick(30);
 
-
     dev::uart::print_str("#########################\n\r");
     dev::uart::print_str("# WELCOME TO STM32 RTOS #\n\r");
     dev::uart::print_str("#########################\n\r");
-    
+
     // dev::uart::print_dec(123);
 
     extern "C" {
@@ -136,6 +138,21 @@ pub extern "C" fn SysTick() {
 pub extern "C" fn SVCall() {
     unsafe {
         __set_exc_return();
+        disable_systick();
+        let sv_reason: u32;
+        asm! ("mov {}, r2", out(reg) sv_reason);
+        match sv_reason {
+            0 => {
+                asm!("bkpt")
+            }
+            1 => {
+                asm!("bkpt")
+            }
+            _ => {
+                asm!("bkpt")
+            }
+        }
+        enable_systick();
     }
 }
 

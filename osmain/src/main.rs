@@ -8,6 +8,8 @@ use rt::sched::{scheduler, task_control};
 use rt::dev::uart::{print_dec, print_str};
 use rt::dev::tim2;
 
+use rt::sys::call_api;
+
 #[repr(C)]
 pub struct ProcessFrame {
     free_space: [u32; 256],
@@ -78,6 +80,7 @@ fn context4() {
 }
 
 fn context3() {
+    call_api::yield_task();
     loop {
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -88,6 +91,7 @@ fn context3() {
 }
 
 fn context2() {
+    //call_api::sleep();
     loop {
         unsafe {
             let mut reg_content = 0x0000_0000;
