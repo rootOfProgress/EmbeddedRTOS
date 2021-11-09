@@ -3,10 +3,10 @@
 #![feature(asm)]
 extern crate rt;
 use core::*;
+use rt::dev::tim2;
+use rt::dev::uart::{print_dec, print_str};
 use rt::interrupts;
 use rt::sched::{scheduler, task_control};
-use rt::dev::uart::{print_dec, print_str};
-use rt::dev::tim2;
 
 use rt::sys::call_api;
 
@@ -55,11 +55,6 @@ impl ProcessFrame {
     }
 }
 
-fn deschedule() {
-    unsafe {
-        asm! {"bkpt"}
-    }
-}
 
 fn fibonacci(n: u32) -> u32 {
     match n {
@@ -83,9 +78,9 @@ fn context3() {
     loop {
         call_api::yield_task();
         // unsafe {
-            // let mut reg_content = 0x0000_0000;
-            // reg_content |= (0b1_u32) << 13;
-            // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // let mut reg_content = 0x0000_0000;
+        // reg_content |= (0b1_u32) << 13;
+        // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
         // }
     }
 }
@@ -101,16 +96,18 @@ fn context2() {
     }
 }
 fn context1() {
-    // loop {
+    loop {
         tim2::start_measurement();
+        call_api::enable_rt_mode();
         fibonacci(20);
+        call_api::disable_rt_mode();
         tim2::stop_measurement();
         let t = tim2::read_value() / 1_000_000;
         print_str("fibonacci 20th digit calc took -> ");
         print_dec(t);
         print_str(" ms\n\r");
         tim2::reset_timer();
-    // }
+    }
 }
 
 fn _init() {

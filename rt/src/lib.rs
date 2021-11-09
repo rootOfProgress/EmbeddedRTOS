@@ -149,6 +149,7 @@ pub extern "C" fn SVCall() {
             }
             1 => {
                 scheduler::context_switch();
+                // enable_systick();
                 // asm!("bkpt")
             }
             2 => {
@@ -156,11 +157,20 @@ pub extern "C" fn SVCall() {
                 scheduler::context_switch();
                 // asm!("bkpt")
             }
+            3 => {
+                disable_systick();
+                return;
+            }
+            4 => {
+                enable_systick();
+                return;
+            }
             _ => {
                 asm!("bkpt")
             }
         }
         enable_systick();
+        
     }
 }
 

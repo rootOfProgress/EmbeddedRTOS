@@ -8,6 +8,19 @@ pub mod call_api {
         YieldTask,
         Sleep
     }
+
+    pub fn enable_rt_mode() {
+        unsafe {
+            __trap(3);
+        }
+    }
+
+    pub fn disable_rt_mode() {
+        unsafe {
+            __trap(4);
+        }
+    }
+    
     pub fn sleep() {
         unsafe {
             __trap(0);
@@ -25,5 +38,6 @@ pub mod call_api {
             __trap(2);
         }       
     }
+
 
 }
