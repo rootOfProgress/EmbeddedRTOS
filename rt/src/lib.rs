@@ -15,6 +15,8 @@ use core::ptr;
 
 use dev::tim2;
 
+use crate::sched::scheduler;
+
 static STARTUP_MSG: &str = "#########################\n\r
                             # WELCOME TO STM32 RTOS #\n\r 
                             #########################\n\r";
@@ -146,7 +148,8 @@ pub extern "C" fn SVCall() {
                 asm!("bkpt")
             }
             1 => {
-                asm!("bkpt")
+                scheduler::context_switch();
+                // asm!("bkpt")
             }
             _ => {
                 asm!("bkpt")

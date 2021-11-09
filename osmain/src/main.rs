@@ -80,13 +80,13 @@ fn context4() {
 }
 
 fn context3() {
-    call_api::yield_task();
     loop {
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 13;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        call_api::yield_task();
+        // unsafe {
+            // let mut reg_content = 0x0000_0000;
+            // reg_content |= (0b1_u32) << 13;
+            // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
     }
 }
 
