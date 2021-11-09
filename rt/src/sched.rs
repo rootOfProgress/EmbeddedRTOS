@@ -17,7 +17,7 @@ pub mod task_control {
 
     const TCB_START: u32 = 0x2000_0200;
     static HEAP_SIZE: AtomicU32 = AtomicU32::new(0);
-    static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
+    pub static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
     const TCB_SIZE: u32 = core::mem::size_of::<TCB>() as u32;
 
     pub fn next_process() -> u32 {
@@ -80,8 +80,7 @@ pub mod scheduler {
         fn __get_current_psp() -> u32;
     }
     use crate::sched::task_control;
-
-    use super::task_control::next_process;
+    use super::task_control::{next_process};
 
     pub fn immediate_start(addr: *const u32) {
         unsafe {

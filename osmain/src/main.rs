@@ -5,7 +5,7 @@ extern crate rt;
 use core::*;
 use rt::interrupts;
 use rt::sched::{scheduler, task_control};
-// use rt::{print_dec, print_str};
+use rt::dev::uart::{print_dec, print_str};
 use rt::dev::tim2;
 
 #[repr(C)]
@@ -59,9 +59,16 @@ fn deschedule() {
     }
 }
 
+fn fibonacci(n: u32) -> u32 {
+    match n {
+        0 => 1,
+        1 => 1,
+        _ => fibonacci(n - 1) + fibonacci(n - 2),
+    }
+}
+
 fn context4() {
     loop {
-        // print_k("running context -> 4...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 12;
@@ -72,7 +79,6 @@ fn context4() {
 
 fn context3() {
     loop {
-        // print_k("running context -> 3...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 13;
@@ -83,7 +89,6 @@ fn context3() {
 
 fn context2() {
     loop {
-        // print_k("running context -> 2...\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 14;
@@ -93,12 +98,14 @@ fn context2() {
 }
 fn context1() {
     loop {
-        // print_k("running context -> 1...\n\r");
-        unsafe {
-            let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 11;
-            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        }
+        tim2::start_measurement();
+        fibonacci(20);
+        tim2::stop_measurement();
+        let t = tim2::read_value() / 1_000_000;
+        print_str("fibonacci 20th digit calc took -> ");
+        print_dec(t);
+        print_str(" ms\n\r");
+        tim2::reset_timer();
     }
 }
 
@@ -129,7 +136,7 @@ pub fn main() -> ! {
     }
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(4);
+    interrupts::systick::STK::set_up_systick(5);
 
     loop {}
 }
