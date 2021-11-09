@@ -10,7 +10,7 @@ use rt::dev::tim2;
 
 #[repr(C)]
 pub struct ProcessFrame {
-    stuff: [u32; 256],
+    free_space: [u32; 256],
     r4: u32,
     r5: u32,
     r6: u32,
@@ -32,7 +32,7 @@ pub struct ProcessFrame {
 impl ProcessFrame {
     pub fn new(target: u32, endpoint: u32) -> ProcessFrame {
         ProcessFrame {
-            stuff: unsafe { mem::MaybeUninit::uninit().assume_init() },
+            free_space: unsafe { mem::zeroed() },
             r4: 0x66a,
             r5: 0x669,
             r6: 0x668,
@@ -102,7 +102,7 @@ fn context1() {
     }
 }
 
-fn init() {
+fn _init() {
     loop {
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -114,10 +114,10 @@ fn init() {
 
 #[no_mangle]
 pub fn main() -> ! {
-    let process_1 = ProcessFrame::new(context1 as *const () as u32, context1 as *const () as u32);
-    let process_2 = ProcessFrame::new(context2 as *const () as u32, context1 as *const () as u32);
-    let process_3 = ProcessFrame::new(context3 as *const () as u32, context1 as *const () as u32);
-    let process_4 = ProcessFrame::new(context4 as *const () as u32, context1 as *const () as u32);
+    let process_1 = ProcessFrame::new(context1 as *const () as u32, deschedule as *const () as u32);
+    let process_2 = ProcessFrame::new(context2 as *const () as u32, deschedule as *const () as u32);
+    let process_3 = ProcessFrame::new(context3 as *const () as u32, deschedule as *const () as u32);
+    let process_4 = ProcessFrame::new(context4 as *const () as u32, deschedule as *const () as u32);
     task_control::insert(ptr::addr_of!(process_1.r4) as u32);
     task_control::insert(ptr::addr_of!(process_2.r4) as u32);
     task_control::insert(ptr::addr_of!(process_3.r4) as u32);
@@ -125,8 +125,11 @@ pub fn main() -> ! {
 
     scheduler::immediate_start(ptr::addr_of!(process_1.r4));
     unsafe {
-        asm!("svc 0");
+        asm!("bkpt");
     }
+
+    // TODO : make a syscall to enable on finishing setup
+    interrupts::systick::STK::set_up_systick(4);
 
     loop {}
 }

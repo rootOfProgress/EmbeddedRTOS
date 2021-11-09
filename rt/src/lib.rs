@@ -6,12 +6,15 @@ pub mod dev;
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
+use core::mem::{zeroed, MaybeUninit};
 use core::panic::PanicInfo;
 use core::ptr;
-use core::mem::{MaybeUninit, zeroed};
 
 use dev::tim2;
 
+static STARTUP_MSG: &str = "#########################\n\r
+                            # WELCOME TO STM32 RTOS #\n\r 
+                            #########################\n\r";
 fn enable_gpio_e_leds() {
     // see p 54 reg boundaries
     let gpio_port_e11 = dev::gpio_driver::GpioX::new("E", 11);
@@ -20,11 +23,11 @@ fn enable_gpio_e_leds() {
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 12);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
-    
+
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 14);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
-    
+
     let gpio_port_e14 = dev::gpio_driver::GpioX::new("E", 13);
     gpio_port_e14.set_moder(dev::gpio_types::ModerTypes::GeneralPurposeOutputMode);
     gpio_port_e14.set_otyper(dev::gpio_types::OutputTypes::PushPull);
@@ -35,15 +38,13 @@ fn setup_clock_system() {
     // see p 166 -> IOPAEN
     let rcc_ahbenr = 0x40021000 | 0x14;
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
-    
-    
+
     // TIM2EN -> p 166
     let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1enr as *mut u32);
         ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
     }
-    
 
     // USART1EN -> p 166
     let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
@@ -54,12 +55,10 @@ fn setup_clock_system() {
 }
 
 fn enable_serial_printing() {
-
     let gpio_port_a0 = dev::gpio_driver::GpioX::new("A", 9);
     gpio_port_a0.set_moder(dev::gpio_types::ModerTypes::AlternateFunctionMode);
     gpio_port_a0.set_otyper(dev::gpio_types::OutputTypes::PushPull);
     gpio_port_a0.into_af(7);
-
 
     let usart1 = dev::uart::new(1, 9600);
     usart1.enable();
@@ -70,8 +69,14 @@ pub unsafe extern "C" fn Reset() -> ! {
     setup_clock_system();
     enable_gpio_e_leds();
     enable_serial_printing();
-    interrupts::systick::STK::set_up_systick(30);
-    dev::uart::print_str("hello from rtos!...\n\r");
+    // interrupts::systick::STK::set_up_systick(30);
+
+
+    dev::uart::print_str("#########################\n\r");
+    dev::uart::print_str("# WELCOME TO STM32 RTOS #\n\r");
+    dev::uart::print_str("#########################\n\r");
+    
+    // dev::uart::print_dec(123);
 
     extern "C" {
         static mut _sbss: u8;
@@ -132,7 +137,6 @@ pub extern "C" fn SVCall() {
     unsafe {
         __set_exc_return();
     }
-
 }
 
 #[no_mangle]

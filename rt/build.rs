@@ -1,5 +1,3 @@
-
-
 use std::{env, error::Error, fs::File, io::Write, path::PathBuf};
 
 use cc::Build;

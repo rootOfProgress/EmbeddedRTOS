@@ -63,7 +63,7 @@ pub mod task_control {
         *tcb = Some(TCB {
             sp: stack_pointer,
             state: TaskStates::READY,
-            pid
+            pid,
         });
 
         HEAP_SIZE.fetch_add(1, Ordering::Relaxed);

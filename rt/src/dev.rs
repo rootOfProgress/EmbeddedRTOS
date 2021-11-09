@@ -80,9 +80,9 @@ pub mod uart {
             dec /= 10;
             cnt += 1;
         }
-        for c in buffer.into_iter().rev() {
+        for c in IntoIterator::into_iter(buffer).rev() {
             unsafe {
-                ptr::write_volatile(usart2_tdr as *mut u32, *c as u32);
+                ptr::write_volatile(usart2_tdr as *mut u32, c as u32);
                 while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
             }
         }

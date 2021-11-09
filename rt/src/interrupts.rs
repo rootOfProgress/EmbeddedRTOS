@@ -34,7 +34,7 @@ pub mod systick {
         }
         fn stk_val_clr(&self) {
             unsafe {
-                let mut current_register_content = ptr::read_volatile(STK_VAL as *const u32);
+                let current_register_content = ptr::read_volatile(STK_VAL as *const u32);
                 ptr::write_volatile(
                     STK_VAL as *mut u32,
                     current_register_content & !(0x00FF_FFFF),
