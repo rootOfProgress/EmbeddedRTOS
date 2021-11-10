@@ -66,6 +66,7 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
+        // print_str("c4\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 12;
@@ -76,6 +77,7 @@ fn context4() {
 
 fn context3() {
     loop {
+        // print_str("c3\n\r");
         call_api::yield_task();
         // unsafe {
         // let mut reg_content = 0x0000_0000;
@@ -88,6 +90,7 @@ fn context3() {
 fn context2() {
     //call_api::sleep();
     loop {
+        // print_str("c2\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
             reg_content |= (0b1_u32) << 14;
@@ -97,10 +100,11 @@ fn context2() {
 }
 fn context1() {
     loop {
+        // print_str("c1\n\r");
         tim2::start_measurement();
-        call_api::enable_rt_mode();
+        // call_api::enable_rt_mode();
         fibonacci(20);
-        call_api::disable_rt_mode();
+        // call_api::disable_rt_mode();
         tim2::stop_measurement();
         let t = tim2::read_value() / 1_000_000;
         print_str("fibonacci 20th digit calc took -> ");
@@ -137,7 +141,7 @@ pub fn main() -> ! {
     }
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(5);
+    interrupts::systick::STK::set_up_systick(10);
 
     loop {}
 }
