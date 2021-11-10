@@ -2,7 +2,6 @@
 #![no_std]
 #![feature(asm)]
 pub mod dev;
-
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
@@ -10,7 +9,8 @@ pub mod sys;
 use core::panic::PanicInfo;
 use interrupts::systick::{disable_systick, enable_systick};
 use core::ptr;
-
+use dev::uart::print_from_ptr;
+use sys::call_api::TrapMeta;
 use crate::sched::{scheduler, task_control};
 
 fn enable_gpio_e_leds() {
@@ -136,30 +136,33 @@ pub extern "C" fn SVCall() {
         disable_systick();
         let sv_reason: u32;
         asm! ("mov {}, r2", out(reg) sv_reason);
-        match sv_reason {
-            0 => {
-                asm!("bkpt")
+
+        let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
+        match trap_meta_info.id {
+            sys::call_api::TrapReason::Sleep => {
+                // asm!("bkpt")
             }
-            1 => {
+            sys::call_api::TrapReason::YieldTask => {
                 scheduler::context_switch();
                 // enable_systick();
                 // asm!("bkpt")
             }
-            2 => {
+            sys::call_api::TrapReason::TerminateTask => {
                 task_control::terminate_task();
                 scheduler::context_switch();
                 // asm!("bkpt")
             }
-            3 => {
+            sys::call_api::TrapReason::EnableRt => {
                 disable_systick();
                 return;
             }
-            4 => {
+            sys::call_api::TrapReason::DisableRt => {
                 enable_systick();
                 return;
             }
-            _ => {
-                asm!("bkpt")
+            sys::call_api::TrapReason::WriteStdOut => {
+                let str_start = trap_meta_info.payload;
+                print_from_ptr(str_start as *mut u8);
             }
         }
         enable_systick();

@@ -4,7 +4,7 @@
 extern crate rt;
 use core::*;
 use rt::dev::tim2;
-use rt::dev::uart::{print_dec, print_str};
+use rt::dev::uart::{print_dec};
 use rt::interrupts;
 use rt::sched::{scheduler, task_control};
 
@@ -66,6 +66,7 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
+        call_api::sleep();
         // print_str("c4\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -99,17 +100,19 @@ fn context2() {
     }
 }
 fn context1() {
+    
+
     loop {
         // print_str("c1\n\r");
         tim2::start_measurement();
-        // call_api::enable_rt_mode();
+        call_api::enable_rt_mode();
         fibonacci(20);
-        // call_api::disable_rt_mode();
+        call_api::disable_rt_mode();
         tim2::stop_measurement();
         let t = tim2::read_value() / 1_000_000;
-        print_str("fibonacci 20th digit calc took -> ");
+        call_api::println("fibonacci 20th digit calc took -> \0");
         print_dec(t);
-        print_str(" ms\n\r");
+        call_api::println(" ms\n\r\0");
         tim2::reset_timer();
     }
 }
@@ -141,7 +144,7 @@ pub fn main() -> ! {
     }
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(100);
+    interrupts::systick::STK::set_up_systick(8);
 
     loop {}
 }

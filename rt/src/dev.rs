@@ -88,6 +88,19 @@ pub mod uart {
         }
     }
 
+    pub fn print_from_ptr(mut ptr_start: *mut u8) {
+        let usart2_tdr = 0x4001_3800 | 0x28;
+        let usart2_isr = 0x4001_3800 | 0x1C;
+
+        unsafe {
+            while *ptr_start != b'\0' {
+                ptr::write_volatile(usart2_tdr as *mut u32, *ptr_start as u32);
+                ptr_start = ptr_start.add(1);
+                while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
+            }
+        }
+    }
+
     pub fn print_str(msg: &str) {
         let usart2_tdr = 0x4001_3800 | 0x28;
         let usart2_isr = 0x4001_3800 | 0x1C;
