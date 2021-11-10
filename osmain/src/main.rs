@@ -141,7 +141,7 @@ pub fn main() -> ! {
     }
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(10);
+    interrupts::systick::STK::set_up_systick(100);
 
     loop {}
 }

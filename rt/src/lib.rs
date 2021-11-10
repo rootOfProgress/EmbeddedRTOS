@@ -7,19 +7,12 @@ pub mod interrupts;
 pub mod mem;
 pub mod sched;
 pub mod sys;
-use core::mem::{zeroed, MaybeUninit};
 use core::panic::PanicInfo;
 use interrupts::systick::{disable_systick, enable_systick};
-// use rt:
 use core::ptr;
-
-use dev::tim2;
 
 use crate::sched::{scheduler, task_control};
 
-static STARTUP_MSG: &str = "#########################\n\r
-                            # WELCOME TO STM32 RTOS #\n\r 
-                            #########################\n\r";
 fn enable_gpio_e_leds() {
     // see p 54 reg boundaries
     let gpio_port_e11 = dev::gpio_driver::GpioX::new("E", 11);

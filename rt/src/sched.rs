@@ -29,13 +29,12 @@ pub mod task_control {
     }
 
     pub fn next_process() -> u32 {
-        // hint: fetch_add to load!
         let current = CURRENT_TASK.fetch_add(1, Ordering::Relaxed) as u32;
         let next = (current + 1) % HEAP_SIZE.load(Ordering::Relaxed);
         let target_tcb_adress = (next * TCB_SIZE) + TCB_START;
         let tcb = unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) };
 
-        // CURRENT_TASK.store(next, Ordering::Relaxed);
+        CURRENT_TASK.store(next, Ordering::Relaxed);
         let sp_of_next_process: u32;
         match tcb {
             Some(t) => match t.state {
