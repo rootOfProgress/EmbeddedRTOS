@@ -140,7 +140,9 @@ pub extern "C" fn SVCall() {
         let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
         match trap_meta_info.id {
             sys::call_api::TrapReason::Sleep => {
-                // asm!("bkpt")
+                let time_to_sleep = trap_meta_info.payload;
+                asm!("bkpt");
+                // print_from_ptr(str_start as *mut u8);
             }
             sys::call_api::TrapReason::YieldTask => {
                 scheduler::context_switch();

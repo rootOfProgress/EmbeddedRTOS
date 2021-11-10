@@ -66,7 +66,7 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
-        call_api::sleep();
+        call_api::sleep(0xF1);
         // print_str("c4\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;

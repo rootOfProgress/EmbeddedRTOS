@@ -4,6 +4,7 @@ pub mod call_api {
         fn __trap(trap_id: &TrapMeta);
     }
 
+    #[repr(C)]
     pub enum TrapReason {
         EnableRt,
         DisableRt,
@@ -25,7 +26,7 @@ pub mod call_api {
             payload: str_start.as_ptr()
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }
     }
 
@@ -35,7 +36,7 @@ pub mod call_api {
             payload: 0x0 as *const u8
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }
     }
 
@@ -45,17 +46,17 @@ pub mod call_api {
             payload: 0x0 as *const u8
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }
     }
     
-    pub fn sleep() {
+    pub fn sleep(time_to_sleep: u8) {
         let meta = TrapMeta {
             id: TrapReason::Sleep,
-            payload: 0x0 as *const u8
+            payload: time_to_sleep as *const u8
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }
     }
 
@@ -65,7 +66,7 @@ pub mod call_api {
             payload: 0x0 as *const u8
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }
     }
 
@@ -75,7 +76,7 @@ pub mod call_api {
             payload: 0x0 as *const u8
         };
         unsafe {
-            __trap(&meta/* core::ptr::addr_of!(meta) as u32 */);
+            __trap(&meta);
         }    
     }
 
