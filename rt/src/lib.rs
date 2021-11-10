@@ -197,10 +197,15 @@ pub extern "C" fn DefaultExceptionHandler() {
 pub extern "C" fn Tim3Interrupt() {
     // tim3::stop();
 
+    tim3::stop();
     unsafe {
         asm!("bkpt");
     }
     tim3::clear_uif();
+    tim3::flush();
+    unsafe {
+        asm!("bkpt");
+    }
     // tim3::reset_timer();
     // unsafe {
     //     asm!("bkpt");

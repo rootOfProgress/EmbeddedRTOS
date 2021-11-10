@@ -16,15 +16,32 @@ pub mod tim3 {
         }
     }
 
+    pub fn flush() {
+        let timx_cnt: u32 = TIM3_BASE | 0x24;
+        unsafe {
+            let existing_value = ptr::read_volatile(timx_cnt as *mut u32);
+            ptr::write_volatile(timx_cnt as *mut u32, existing_value & !(0xFFFF));
+        }
+    }
+
     pub fn clear_uif() {
         let tim3_sr = TIM3_BASE | 0x10;
         unsafe {
             let existing_value = ptr::read_volatile(tim3_sr as *mut u32);
-            ptr::write_volatile(tim3_sr  as *mut u32, existing_value & !(0b1111));
-            ptr::write_volatile(tim3_sr  as *mut u32, existing_value & !(0b1 << 6));
+            ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1111));
+            ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1 << 6));
         }
     }
- 
+
+    pub fn set_ug() {
+        let tim3_egr = TIM3_BASE | 0x14;
+        unsafe {
+            let existing_value = ptr::read_volatile(tim3_egr as *mut u32);
+            ptr::write_volatile(tim3_egr as *mut u32, existing_value | 0b1);
+            // ptr::write_volatile(tim3_sr  as *mut u32, existing_value & !(0b1 << 6));
+        }
+    }
+
     pub fn stop() {
         unsafe {
             let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
@@ -62,7 +79,7 @@ pub mod tim3 {
     pub fn set_prescaler(value: u16) {
         let tim3_psc: u32 = TIM3_BASE | 0x28;
         unsafe {
-            let existing_value = ptr::read_volatile(tim3_psc as *mut u32) ;  
+            let existing_value = ptr::read_volatile(tim3_psc as *mut u32);
             ptr::write_volatile(tim3_psc as *mut u32, existing_value | value as u32);
         }
     }

@@ -127,6 +127,9 @@ fn _init() {
 
 #[no_mangle]
 pub fn main() -> ! {
+    tim3::set_prescaler(1000);
+    tim3::set_ccr(8000);
+    tim3::set_ug();
     tim3::enable_interrupt();
 
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
@@ -146,11 +149,9 @@ pub fn main() -> ! {
     // asm!("bkpt");
     // }
     // tim3::reset_timer();
-    tim3::set_prescaler(0x1000);
     unsafe {
         asm!("bkpt");
     }
-    tim3::set_ccr(0x8000);
     tim3::start();
 
     // TODO : make a syscall to enable on finishing setup
