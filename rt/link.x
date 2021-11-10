@@ -22,6 +22,8 @@ SECTIONS
     KEEP(*(.vector_table.reset_vector));
     KEEP(*(.vector_table.exceptions));
   } > FLASH
+
+
   PROVIDE(NMI = DefaultExceptionHandler);
   PROVIDE(HardFault = DefaultExceptionHandler);
   PROVIDE(MemManage = DefaultExceptionHandler);

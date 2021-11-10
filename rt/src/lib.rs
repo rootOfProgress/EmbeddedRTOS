@@ -6,12 +6,12 @@ pub mod interrupts;
 pub mod mem;
 pub mod sched;
 pub mod sys;
-use core::panic::PanicInfo;
-use interrupts::systick::{disable_systick, enable_systick};
-use core::ptr;
-use dev::uart::print_from_ptr;
-use sys::call_api::TrapMeta;
 use crate::sched::{scheduler, task_control};
+use core::panic::PanicInfo;
+use core::ptr;
+use dev::{tim3, uart::print_from_ptr};
+use interrupts::systick::{disable_systick, enable_systick};
+use sys::call_api::TrapMeta;
 
 fn enable_gpio_e_leds() {
     // see p 54 reg boundaries
@@ -37,11 +37,11 @@ fn setup_clock_system() {
     let rcc_ahbenr = 0x40021000 | 0x14;
     unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
 
-    // TIM2EN -> p 166
+    // TIM2 and 3 EN -> p 166
     let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
     unsafe {
         let existing_value = ptr::read_volatile(rcc_apb1enr as *mut u32);
-        ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b1);
+        ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b11);
     }
 
     // USART1EN -> p 166
@@ -89,6 +89,23 @@ pub unsafe extern "C" fn Reset() -> ! {
 
     let count = &_edata as *const u8 as usize - &_sdata as *const u8 as usize;
     ptr::copy_nonoverlapping(&_sidata as *const u8, &mut _sdata as *mut u8, count);
+
+    let nvic_iser: u32 = 0xE000E100;
+    let existing_value = ptr::read_volatile(nvic_iser as *mut u32);
+    ptr::write_volatile(nvic_iser as *mut u32, existing_value | 0b1 << 29);
+    // asm!("bkpt");
+
+    // let scb_ccr: u32 = 0xE000ED00 | 0x14;
+    // let existing_value = ptr::read_volatile(scb_ccr as *mut u32);
+    // ptr::write_volatile(scb_ccr as *mut u32, existing_value | 0b10);
+
+    // let stir: u32 = 0xE000EF00;
+    // for i in 0..239 {
+    //     let existing_value = ptr::read_volatile(stir as *mut u32);
+    //     ptr::write_volatile(stir as *mut u32, existing_value & !(0xFF));
+    //     ptr::write_volatile(stir as *mut u32, existing_value | i);
+    //     // asm!("bkpt");
+    // }
 
     extern "Rust" {
         fn main() -> !;
@@ -141,7 +158,7 @@ pub extern "C" fn SVCall() {
         match trap_meta_info.id {
             sys::call_api::TrapReason::Sleep => {
                 let time_to_sleep = trap_meta_info.payload;
-                asm!("bkpt");
+                // asm!("bkpt");
                 // print_from_ptr(str_start as *mut u8);
             }
             sys::call_api::TrapReason::YieldTask => {
@@ -168,7 +185,6 @@ pub extern "C" fn SVCall() {
             }
         }
         enable_systick();
-        
     }
 }
 
@@ -177,9 +193,25 @@ pub extern "C" fn DefaultExceptionHandler() {
     loop {}
 }
 
+#[no_mangle]
+pub extern "C" fn Tim3Interrupt() {
+    // tim3::stop();
+
+    unsafe {
+        asm!("bkpt");
+    }
+    tim3::clear_uif();
+    // tim3::reset_timer();
+    // unsafe {
+    //     asm!("bkpt");
+    // }
+
+    // loop {}
+}
+
 #[link_section = ".vector_table.exceptions"]
 #[no_mangle]
-pub static EXCEPTIONS: [Vector; 14] = [
+pub static EXCEPTIONS: [Vector; 61] = [
     Vector { handler: NMI },
     Vector { handler: HardFault },
     Vector { handler: MemManage },
@@ -196,4 +228,144 @@ pub static EXCEPTIONS: [Vector; 14] = [
     Vector { reserved: 0 },
     Vector { handler: PendSV },
     Vector { handler: SysTick },
+    Vector { reserved: 0 }, //wwdg pos 0
+    // why reading docs when you can try'n error?? ;p
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
+    Vector {
+        handler: Tim3Interrupt,
+    },
 ];

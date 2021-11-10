@@ -3,8 +3,8 @@
 #![feature(asm)]
 extern crate rt;
 use core::*;
-use rt::dev::tim2;
-use rt::dev::uart::{print_dec};
+use rt::dev::uart::print_dec;
+use rt::dev::{tim2, tim3};
 use rt::interrupts;
 use rt::sched::{scheduler, task_control};
 
@@ -55,7 +55,6 @@ impl ProcessFrame {
     }
 }
 
-
 fn fibonacci(n: u32) -> u32 {
     match n {
         0 => 1,
@@ -90,6 +89,7 @@ fn context3() {
 
 fn context2() {
     //call_api::sleep();
+
     loop {
         // print_str("c2\n\r");
         unsafe {
@@ -100,8 +100,6 @@ fn context2() {
     }
 }
 fn context1() {
-    
-
     loop {
         // print_str("c1\n\r");
         tim2::start_measurement();
@@ -110,9 +108,9 @@ fn context1() {
         call_api::disable_rt_mode();
         tim2::stop_measurement();
         let t = tim2::read_value() / 1_000_000;
-        call_api::println("fibonacci 20th digit calc took -> \0");
-        print_dec(t);
-        call_api::println(" ms\n\r\0");
+        // call_api::println("fibonacci 20th digit calc took -> \0");
+        // print_dec(t);
+        // call_api::println(" ms\n\r\0");
         tim2::reset_timer();
     }
 }
@@ -129,6 +127,8 @@ fn _init() {
 
 #[no_mangle]
 pub fn main() -> ! {
+    tim3::enable_interrupt();
+
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32);
@@ -139,12 +139,22 @@ pub fn main() -> ! {
     task_control::insert(ptr::addr_of!(process_4.r4) as u32);
 
     scheduler::immediate_start(ptr::addr_of!(process_1.r4));
+    tim3::clear_uif();
+    tim3::clear_udis();
+    // unsafe {
+
+    // asm!("bkpt");
+    // }
+    // tim3::reset_timer();
+    tim3::set_prescaler(0x1000);
     unsafe {
         asm!("bkpt");
     }
+    tim3::set_ccr(0x8000);
+    tim3::start();
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(8);
+    interrupts::systick::STK::set_up_systick(5000);
 
     loop {}
 }
