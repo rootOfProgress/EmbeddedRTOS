@@ -66,30 +66,14 @@ pub mod task_control {
             Some(t) => match t.state {
                 TaskStates::READY => {
                     sp_of_next_process = t.sp;
-                    unsafe {
-                        // asm!("bkpt");
-                    }
-                    // t.state = TaskStates::BLOCKED;
-                    unsafe {
-                        // asm!("bkpt");
-                    }
                 }
                 TaskStates::BLOCKED => {
-                    unsafe {
-                        // asm!("bkpt");
-                    }
                     sp_of_next_process = next_process();
                 }
                 TaskStates::TERMINATED  => {
-                    unsafe {
-                        // asm!("bkpt");
-                    }
                     sp_of_next_process = next_process();
                 }
                 _ => {
-                    unsafe {
-                        // asm!("bkpt");
-                    }
                     sp_of_next_process = t.sp;
                 }
             },
