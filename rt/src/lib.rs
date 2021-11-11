@@ -101,19 +101,7 @@ pub unsafe extern "C" fn Reset() -> ! {
     let nvic_iser: u32 = 0xE000E100;
     let existing_value = ptr::read_volatile(nvic_iser as *mut u32);
     ptr::write_volatile(nvic_iser as *mut u32, existing_value | 0b1 << 29);
-    // asm!("bkpt");
 
-    // let scb_ccr: u32 = 0xE000ED00 | 0x14;
-    // let existing_value = ptr::read_volatile(scb_ccr as *mut u32);
-    // ptr::write_volatile(scb_ccr as *mut u32, existing_value | 0b10);
-
-    // let stir: u32 = 0xE000EF00;
-    // for i in 0..239 {
-    //     let existing_value = ptr::read_volatile(stir as *mut u32);
-    //     ptr::write_volatile(stir as *mut u32, existing_value & !(0xFF));
-    //     ptr::write_volatile(stir as *mut u32, existing_value | i);
-    //     // asm!("bkpt");
-    // }
 
     extern "Rust" {
         fn main() -> !;
@@ -165,20 +153,20 @@ pub extern "C" fn SVCall() {
         let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
         match trap_meta_info.id {
             sys::call_api::TrapReason::Sleep => {
-                let time_to_sleep = trap_meta_info.payload as u8;
-                // tim3::start();
-                asm!("bkpt");
-                // print_from_ptr(str_start as *mut u8);
+                let time_to_sleep = trap_meta_info.payload;
+                tim3::set_ccr((*time_to_sleep * 8) as u16);
+                tim3::set_ug();
+                task_control::mark_self_as_sleeping();
+
+                tim3::start();
+                scheduler::context_switch();
             }
             sys::call_api::TrapReason::YieldTask => {
                 scheduler::context_switch();
-                // enable_systick();
-                // asm!("bkpt")
             }
             sys::call_api::TrapReason::TerminateTask => {
                 task_control::terminate_task();
                 scheduler::context_switch();
-                // asm!("bkpt")
             }
             sys::call_api::TrapReason::EnableRt => {
                 disable_systick();
@@ -204,17 +192,18 @@ pub extern "C" fn DefaultExceptionHandler() {
 
 #[no_mangle]
 pub extern "C" fn Tim3Interrupt() {
+    unsafe {
+        // asm!("bkpt");
+    }
     // tim3::stop();
 
     tim3::stop();
-    unsafe {
-        asm!("bkpt");
-    }
+    // unsafe {
+    //     asm!("bkpt");
+    // }
     tim3::clear_uif();
     tim3::flush();
-    unsafe {
-        asm!("bkpt");
-    }
+    scheduler::priority_schedule();
     // tim3::reset_timer();
     // unsafe {
     //     asm!("bkpt");

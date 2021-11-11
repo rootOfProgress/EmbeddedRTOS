@@ -65,25 +65,43 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
-        call_api::sleep(1000);
         // print_str("c4\n\r");
+        call_api::println("c4 goes to sleep for 1000 ms\n\r\0");
+        tim2::start_measurement();
+        call_api::sleep(1000);
+        tim2::stop_measurement();
+        let t = tim2::read_value() / 1_000_000;
+        call_api::println("c4 actually slept for -> \0");
+        print_dec(t);
+        call_api::println("ms \n\r\0");
+        tim2::reset_timer();
+
         unsafe {
             let mut reg_content = 0x0000_0000;
-            reg_content |= (0b1_u32) << 12;
+            reg_content |= (0b1_u32) << 10;
             ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
         }
+        // unsafe {
+        //     let mut reg_content = 0x0000_0000;
+        //     reg_content |= (0b1_u32) << 12;
+        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        // }
+        // call_api::println("should not repeat \0\n\r");
+        // task_control::set_task_state(task_control::TaskStates::BLOCKED);
+        // call_api::yield_task();
     }
 }
 
 fn context3() {
     loop {
         // print_str("c3\n\r");
-        call_api::yield_task();
-        // unsafe {
-        // let mut reg_content = 0x0000_0000;
-        // reg_content |= (0b1_u32) << 13;
-        // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
+        // call_api::yield_task();
+        unsafe {
+        let mut reg_content = 0x0000_0000;
+        reg_content |= (0b1_u32) << 12;
+        ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        }
+
     }
 }
 
@@ -101,17 +119,22 @@ fn context2() {
 }
 fn context1() {
     loop {
+        unsafe {
+            let mut reg_content = 0x0000_0000;
+            reg_content |= (0b1_u32) << 13;
+            ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
+        }
         // print_str("c1\n\r");
-        tim2::start_measurement();
-        call_api::enable_rt_mode();
-        fibonacci(20);
-        call_api::disable_rt_mode();
-        tim2::stop_measurement();
-        let t = tim2::read_value() / 1_000_000;
-        call_api::println("fibonacci 20th digit calc took -> \0");
-        print_dec(t);
-        call_api::println(" ms\n\r\0");
-        tim2::reset_timer();
+        // tim2::start_measurement();
+        // call_api::enable_rt_mode();
+        // fibonacci(20);
+        // call_api::disable_rt_mode();
+        // tim2::stop_measurement();
+        // let t = tim2::read_value() / 1_000_000;
+        // call_api::println("fibonacci 20th digit calc took -> \0");
+        // print_dec(t);
+        // call_api::println(" ms\n\r\0");
+        // tim2::reset_timer();
     }
 }
 
@@ -127,8 +150,6 @@ fn _init() {
 
 #[no_mangle]
 pub fn main() -> ! {
-    tim3::set_ccr(8000);
-
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32);
     let process_3 = ProcessFrame::new(context3 as *const () as u32);
@@ -148,10 +169,9 @@ pub fn main() -> ! {
     unsafe {
         asm!("bkpt");
     }
-    
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(50);
+    interrupts::systick::STK::set_up_systick(100);
 
     loop {}
 }

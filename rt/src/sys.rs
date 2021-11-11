@@ -54,7 +54,7 @@ pub mod call_api {
     pub fn sleep(time_to_sleep: u32) {
         let meta = TrapMeta {
             id: TrapReason::Sleep,
-            payload: (time_to_sleep * 8) as *const u32
+            payload: &time_to_sleep as *const u32
         };
         unsafe {
             __trap(&meta);
