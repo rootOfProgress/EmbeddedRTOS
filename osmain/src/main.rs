@@ -65,7 +65,7 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
-        call_api::sleep(0xF1);
+        call_api::sleep(1000);
         // print_str("c4\n\r");
         unsafe {
             let mut reg_content = 0x0000_0000;
@@ -108,9 +108,9 @@ fn context1() {
         call_api::disable_rt_mode();
         tim2::stop_measurement();
         let t = tim2::read_value() / 1_000_000;
-        // call_api::println("fibonacci 20th digit calc took -> \0");
-        // print_dec(t);
-        // call_api::println(" ms\n\r\0");
+        call_api::println("fibonacci 20th digit calc took -> \0");
+        print_dec(t);
+        call_api::println(" ms\n\r\0");
         tim2::reset_timer();
     }
 }
@@ -127,10 +127,7 @@ fn _init() {
 
 #[no_mangle]
 pub fn main() -> ! {
-    tim3::set_prescaler(1000);
     tim3::set_ccr(8000);
-    tim3::set_ug();
-    tim3::enable_interrupt();
 
     let process_1 = ProcessFrame::new(context1 as *const () as u32);
     let process_2 = ProcessFrame::new(context2 as *const () as u32);
@@ -142,8 +139,7 @@ pub fn main() -> ! {
     task_control::insert(ptr::addr_of!(process_4.r4) as u32);
 
     scheduler::immediate_start(ptr::addr_of!(process_1.r4));
-    tim3::clear_uif();
-    tim3::clear_udis();
+
     // unsafe {
 
     // asm!("bkpt");
@@ -152,10 +148,10 @@ pub fn main() -> ! {
     unsafe {
         asm!("bkpt");
     }
-    tim3::start();
+    
 
     // TODO : make a syscall to enable on finishing setup
-    interrupts::systick::STK::set_up_systick(5000);
+    interrupts::systick::STK::set_up_systick(50);
 
     loop {}
 }

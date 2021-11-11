@@ -67,6 +67,14 @@ pub unsafe extern "C" fn Reset() -> ! {
     setup_clock_system();
     enable_gpio_e_leds();
     enable_serial_printing();
+
+    tim3::set_prescaler(1000);
+    tim3::set_ug();
+    tim3::clear_uif();
+    tim3::clear_udis();
+    tim3::enable_interrupt();
+
+
     // interrupts::systick::STK::set_up_systick(30);
 
     dev::uart::print_str("#########################\n\r");
@@ -157,8 +165,9 @@ pub extern "C" fn SVCall() {
         let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
         match trap_meta_info.id {
             sys::call_api::TrapReason::Sleep => {
-                let time_to_sleep = trap_meta_info.payload;
-                // asm!("bkpt");
+                let time_to_sleep = trap_meta_info.payload as u8;
+                // tim3::start();
+                asm!("bkpt");
                 // print_from_ptr(str_start as *mut u8);
             }
             sys::call_api::TrapReason::YieldTask => {
