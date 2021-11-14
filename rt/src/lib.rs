@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
 #![feature(asm)]
+
 pub mod dev;
 pub mod interrupts;
 pub mod mem;
@@ -190,26 +191,25 @@ pub extern "C" fn DefaultExceptionHandler() {
     loop {}
 }
 
+
+///
+/// Interrupt Service Routine when timer 3 cnt register reaches
+/// value in timer 3 capture compare register 1. 
+/// 
 #[no_mangle]
 pub extern "C" fn Tim3Interrupt() {
-    unsafe {
-        // asm!("bkpt");
-    }
-    // tim3::stop();
-
+    disable_systick();
     tim3::stop();
-    // unsafe {
-    //     asm!("bkpt");
-    // }
-    tim3::clear_uif();
-    tim3::flush();
-    scheduler::priority_schedule();
-    // tim3::reset_timer();
-    // unsafe {
-    //     asm!("bkpt");
-    // }
 
-    // loop {}
+    // clear interrupt flag to prevent hanging in ISR
+    tim3::clear_uif();
+
+    // reset counter value to 0
+    tim3::flush();
+
+    // wake up sleeping task
+    scheduler::priority_schedule();
+    enable_systick();
 }
 
 #[link_section = ".vector_table.exceptions"]
