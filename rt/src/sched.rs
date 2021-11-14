@@ -1,5 +1,5 @@
 pub mod task_control {
-    use core::sync::atomic::{AtomicU32, AtomicU8, Ordering};
+    use core::sync::atomic::{AtomicU32, Ordering};
     pub enum TaskStates {
         READY,
         RUNNING,
@@ -22,6 +22,10 @@ pub mod task_control {
         }
     }
 
+    ///
+    /// Override current task state with parameter offered
+    /// by enum TaskStates
+    /// 
     pub fn set_task_state(new_state: TaskStates) {
         match get_current_tcb() {
             Some(t) => t.state = new_state,
@@ -29,6 +33,10 @@ pub mod task_control {
         }
     }
 
+    ///
+    /// Tasklist is fix located at 0x2000_0200.
+    /// TODO: Reserve this area in linker script somehow.
+    /// 
     const TCB_START: u32 = 0x2000_0200;
     const TCB_SIZE: u32 = core::mem::size_of::<TCB>() as u32;
 
@@ -37,6 +45,11 @@ pub mod task_control {
     pub static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
 
 
+    ///
+    /// Loads table index of task which has currently the state "SLEEPING",
+    /// sets this task into running and returns the last known stackpointer
+    /// adress from it.
+    /// 
     pub fn get_sleeping() -> u32 {
         let currently_sleeping = CURRENTLY_SLEEPING.load( Ordering::Relaxed) as u32;
         let target_tcb_adress = (currently_sleeping * TCB_SIZE) + TCB_START;
@@ -128,8 +141,7 @@ pub mod scheduler {
         fn __load_process_context(addr: u32);
         fn __get_current_psp() -> u32;
     }
-    use crate::sched::task_control;
-    use super::task_control::{get_sleeping, next_process, set_task_state, update_sp};
+    use super::task_control::{get_sleeping, next_process, update_sp};
 
     pub fn immediate_start(addr: *const u32) {
         unsafe {
@@ -137,6 +149,9 @@ pub mod scheduler {
         }
     }
 
+    ///
+    /// Loads the sleeping task and schedules it instant. 
+    /// 
     pub fn priority_schedule() {
         unsafe {
             // loads process stack pointer value into r0,
@@ -166,6 +181,10 @@ pub mod scheduler {
         }
     }
 
+    ///
+    /// Loads next ready task in line. 
+    /// Schedules tasks in round robin manner.
+    /// 
     pub fn context_switch() {
         unsafe {
             // loads process stack pointer value into r0,
