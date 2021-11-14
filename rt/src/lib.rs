@@ -148,6 +148,7 @@ pub extern "C" fn SVCall() {
     unsafe {
         __set_exc_return();
         disable_systick();
+    
         let sv_reason: u32;
         asm! ("mov {}, r2", out(reg) sv_reason);
 
@@ -198,6 +199,10 @@ pub extern "C" fn DefaultExceptionHandler() {
 /// 
 #[no_mangle]
 pub extern "C" fn Tim3Interrupt() {
+
+    // tim3 isr has much lower priority than systick, so it is necessary to disable the systick
+    // until sleeping task has successfully restored. otherwise it may occur that the restore
+    // gets interrupted by systick and the overlaying context switch destroys the task switch workflow
     disable_systick();
     tim3::stop();
 
