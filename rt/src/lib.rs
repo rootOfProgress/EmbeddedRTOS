@@ -75,7 +75,6 @@ pub unsafe extern "C" fn Reset() -> ! {
     tim3::clear_udis();
     tim3::enable_interrupt();
 
-
     // interrupts::systick::STK::set_up_systick(30);
 
     dev::uart::print_str("#########################\n\r");
@@ -102,7 +101,6 @@ pub unsafe extern "C" fn Reset() -> ! {
     let nvic_iser: u32 = 0xE000E100;
     let existing_value = ptr::read_volatile(nvic_iser as *mut u32);
     ptr::write_volatile(nvic_iser as *mut u32, existing_value | 0b1 << 29);
-
 
     extern "Rust" {
         fn main() -> !;
@@ -131,7 +129,7 @@ extern "C" {
     fn MemManage();
     fn BusFault();
     fn UsageFault();
-    fn PendSV();
+    // fn PendSV();
     fn __set_exc_return();
 }
 
@@ -139,16 +137,34 @@ extern "C" {
 pub extern "C" fn SysTick() {
     unsafe {
         __set_exc_return();
+        disable_systick();
+        set_pending();
     }
+}
+
+fn set_pending() {
+    unsafe {
+        // Interrupt control and state register, page 225
+        // baseadress: scb, p221 4.4, line 3
+        // offset: 4.4.3, p225
+        let icsr_pendsvset: u32 = 0xE000ED04 | 0x04;
+        let existing_value = ptr::read_volatile(icsr_pendsvset as *mut u32);
+        ptr::write_volatile(icsr_pendsvset as *mut u32, existing_value | (0b1 << 28));
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn PendSV() {
     sched::scheduler::context_switch();
+    enable_systick();
 }
 
 #[no_mangle]
 pub extern "C" fn SVCall() {
+    disable_systick();
     unsafe {
-        __set_exc_return();
-        disable_systick();
-    
+        // __set_exc_return();
+
         let sv_reason: u32;
         asm! ("mov {}, r2", out(reg) sv_reason);
 
@@ -161,14 +177,14 @@ pub extern "C" fn SVCall() {
                 task_control::mark_self_as_sleeping();
 
                 tim3::start();
-                scheduler::context_switch();
+                set_pending();
             }
             sys::call_api::TrapReason::YieldTask => {
-                scheduler::context_switch();
+                set_pending();
             }
             sys::call_api::TrapReason::TerminateTask => {
                 task_control::terminate_task();
-                scheduler::context_switch();
+                set_pending();
             }
             sys::call_api::TrapReason::EnableRt => {
                 disable_systick();
@@ -183,7 +199,7 @@ pub extern "C" fn SVCall() {
                 print_from_ptr(str_start as *mut u8);
             }
         }
-        enable_systick();
+        // enable_systick();
     }
 }
 
@@ -192,14 +208,12 @@ pub extern "C" fn DefaultExceptionHandler() {
     loop {}
 }
 
-
 ///
 /// Interrupt Service Routine when timer 3 cnt register reaches
-/// value in timer 3 capture compare register 1. 
-/// 
+/// value in timer 3 capture compare register 1.
+///
 #[no_mangle]
 pub extern "C" fn Tim3Interrupt() {
-
     // tim3 isr has much lower priority than systick, so it is necessary to disable the systick
     // until sleeping task has successfully restored. otherwise it may occur that the restore
     // gets interrupted by systick and the overlaying context switch destroys the task switch workflow
