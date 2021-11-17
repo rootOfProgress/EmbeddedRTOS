@@ -197,6 +197,7 @@ pub extern "C" fn SVCall() {
             sys::call_api::TrapReason::WriteStdOut => {
                 let str_start = trap_meta_info.payload;
                 print_from_ptr(str_start as *mut u8);
+                enable_systick();
             }
         }
         // enable_systick();
@@ -228,6 +229,8 @@ pub extern "C" fn Tim3Interrupt() {
 
     // wake up sleeping task
     scheduler::priority_schedule();
+
+    // set_pending();
     enable_systick();
 }
 
