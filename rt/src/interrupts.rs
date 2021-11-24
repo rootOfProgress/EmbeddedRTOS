@@ -1,11 +1,10 @@
 //!
 //! Collection of necessary devices for interrupt control.
 //! Provides interrupt device instantiation, adjustment and en-/disable methods.
-//! 
+//!
 
 pub mod systick {
-    use core::ptr;
-    use crate::mem::memory_handler::{write, read};
+    use crate::mem::memory_handler::{read, write};
     const STK_CTRL: u32 = 0xE000_E010;
     const STK_LOAD: u32 = 0xE000_E014;
     const STK_VAL: u32 = 0xE000_E018;
@@ -17,7 +16,6 @@ pub mod systick {
     }
 
     impl STK {
-        // sry little bit sloppy..
         pub fn set_up_systick(period_ms: u32) {
             let systick_reg = STK {
                 cycles_until_zero: period_ms * FACTOR,
@@ -27,54 +25,31 @@ pub mod systick {
             systick_reg.stk_run();
         }
         fn stk_load(&self) {
-            // unsafe {
-                // let mut current_register_content = ptr::read_volatile(STK_LOAD as *const u32);
-                let mut current_register_content = read(STK_LOAD);
-
-                current_register_content &= !(0x00FF_FFFF);
-                write(STK_LOAD, current_register_content | self.cycles_until_zero);
-                // ptr::write_volatile(
-                //     STK_LOAD as *mut u32,
-                //     current_register_content | self.cycles_until_zero,
-                // );
-            // }
+            let mut current_register_content = read(STK_LOAD);
+            current_register_content &= !(0x00FF_FFFF);
+            write(STK_LOAD, current_register_content | self.cycles_until_zero);
         }
         fn stk_val_clr(&self) {
-            unsafe {
-                let current_register_content = ptr::read_volatile(STK_VAL as *const u32);
-                ptr::write_volatile(
-                    STK_VAL as *mut u32,
-                    current_register_content & !(0x00FF_FFFF),
-                );
-            }
+            let current_register_content = read(STK_VAL);
+            write(STK_VAL, current_register_content & !(0x00FF_FFFF));
         }
         fn stk_run(&self) {
-            unsafe {
-                let mut existing_val = ptr::read_volatile(STK_CTRL as *const u32);
+            let mut existing_val = read(STK_CTRL);
 
-                existing_val &= !(0b111);
-                existing_val |= (0b100) | (0b010) | (0b001);
+            existing_val &= !(0b111);
+            existing_val |= (0b100) | (0b010) | (0b001);
 
-                ptr::write_volatile(STK_CTRL as *mut u32, existing_val);
-            }
+            write(STK_CTRL, existing_val);
         }
     }
     pub fn disable_systick() {
-        unsafe {
-            let mut existing_val = ptr::read_volatile(STK_CTRL as *const u32);
-
-            existing_val &= !(0b1);
-
-            ptr::write_volatile(STK_CTRL as *mut u32, existing_val);
-        }
+        let mut existing_val = read(STK_CTRL);
+        existing_val &= !(0b1);
+        write(STK_CTRL, existing_val);
     }
     pub fn enable_systick() {
-        unsafe {
-            let mut existing_val = ptr::read_volatile(STK_CTRL as *const u32);
-
-            existing_val |= 0b1;
-
-            ptr::write_volatile(STK_CTRL as *mut u32, existing_val);
-        }
+        let mut existing_val = read(STK_CTRL);
+        existing_val |= 0b1;
+        write(STK_CTRL, existing_val);
     }
 }

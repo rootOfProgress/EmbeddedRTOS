@@ -1,6 +1,6 @@
 //!
 //! Contains the process table and appropriate
-//! methods to control task switching. 
+//! methods to control task switching.
 //!
 
 pub mod task_control {
@@ -14,11 +14,17 @@ pub mod task_control {
         TERMINATED,
     }
 
+    ///
+    /// Task Control Block, 32 Bit aligned.
+    ///
     #[repr(C)]
     #[repr(align(4))]
     pub struct TCB {
+        // Current stack pointer value
         sp: u32,
+        //Task condition according to TaskStates
         state: TaskStates,
+        // Task number
         pid: u32,
     }
 
@@ -32,7 +38,7 @@ pub mod task_control {
     ///
     /// Override current task state with parameter offered
     /// by enum TaskStates
-    /// 
+    ///
     pub fn set_task_state(new_state: TaskStates) {
         match get_current_tcb() {
             Some(t) => t.state = new_state,
@@ -43,7 +49,7 @@ pub mod task_control {
     ///
     /// Tasklist is fix located at 0x2000_0200.
     /// TODO: Reserve this area in linker script somehow.
-    /// 
+    ///
     const TCB_START: u32 = 0x2000_0200;
     const TCB_SIZE: u32 = core::mem::size_of::<TCB>() as u32;
 
@@ -51,14 +57,13 @@ pub mod task_control {
     pub static CURRENTLY_SLEEPING: AtomicU32 = AtomicU32::new(0);
     pub static CURRENT_TASK: AtomicU32 = AtomicU32::new(0);
 
-
     ///
     /// Loads table index of task which has currently the state "SLEEPING",
     /// sets this task into running and returns the last known stackpointer
     /// adress from it.
-    /// 
+    ///
     pub fn get_sleeping() -> u32 {
-        let currently_sleeping = CURRENTLY_SLEEPING.load( Ordering::Relaxed) as u32;
+        let currently_sleeping = CURRENTLY_SLEEPING.load(Ordering::Relaxed) as u32;
         let target_tcb_adress = (currently_sleeping * TCB_SIZE) + TCB_START;
         let tcb = unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) };
         CURRENT_TASK.store(currently_sleeping, Ordering::Relaxed);
@@ -68,9 +73,7 @@ pub mod task_control {
                 t.state = TaskStates::RUNNING;
                 t.sp
             }
-            None => {
-                0x00
-            }        
+            None => 0x00,
         }
     }
 
@@ -90,7 +93,7 @@ pub mod task_control {
                 TaskStates::BLOCKED => {
                     sp_of_next_process = next_process();
                 }
-                TaskStates::TERMINATED  => {
+                TaskStates::TERMINATED => {
                     sp_of_next_process = next_process();
                 }
                 _ => {
@@ -109,8 +112,6 @@ pub mod task_control {
         let target_tcb_adress = (current * TCB_SIZE) + TCB_START;
         unsafe { &mut *(target_tcb_adress as *mut Option<TCB>) }
     }
-
-
 
     pub fn terminate_task() {
         match get_current_tcb() {
@@ -147,7 +148,7 @@ pub mod scheduler {
         /// Points to extern asm instruction. Moves
         /// the current program stack pointer
         /// to cpu register r0
-        /// 
+        ///
         pub fn __write_psp(addr: u32);
         fn __save_process_context();
         fn __load_process_context(addr: u32);
@@ -162,66 +163,66 @@ pub mod scheduler {
     }
 
     ///
-    /// Loads the sleeping task and schedules it instant. 
-    /// 
+    /// Loads the sleeping task and schedules it instant.
+    ///
     pub fn priority_schedule() {
         unsafe {
             // loads process stack pointer value into r0,
             // based on this adress registers r4 - r11 gets
             // pushed onto the stack. after finishing this operation,
-            // the new value of r0 (it points now to lower adresses 
-            // because registers get pushed onto it) gets assigned 
+            // the new value of r0 (it points now to lower adresses
+            // because registers get pushed onto it) gets assigned
             // to psp.
             __save_process_context();
 
             // the newly written process stack pointer gets written
-            // into the task control block of the process table 
+            // into the task control block of the process table
             // for further restoring when needed
             update_sp(__get_current_psp());
 
-            // the saved task's state gets changed from running 
+            // the saved task's state gets changed from running
             // to ready, because no other event blocks or terminates
             // the task
             // set_task_state(task_control::TaskStates::READY);
 
-            // the function next_process returns an u32 adress 
+            // the function next_process returns an u32 adress
             // to the runnable successors task's stackpointer, which is
             // saved in the process table. the parameter gets saved
             // into r0, based from this value the registers r4 - r11
-            // gets popped of the stack and written into the cpu's registers. 
+            // gets popped of the stack and written into the cpu's registers.
             __load_process_context(get_sleeping());
         }
     }
 
     ///
-    /// Loads next ready task in line. 
+    /// Loads next ready task in line.
     /// Schedules tasks in round robin manner.
-    /// 
+    ///
     pub fn context_switch() {
         unsafe {
             // loads process stack pointer value into r0,
             // based on this adress registers r4 - r11 gets
             // pushed onto the stack. after finishing this operation,
-            // the new value of r0 (it points now to lower adresses 
-            // because registers get pushed onto it) gets assigned 
+            // the new value of r0 (it points now to lower adresses
+            // because registers get pushed onto it) gets assigned
             // to psp.
             __save_process_context();
 
             // the newly written process stack pointer gets written
-            // into the task control block of the process table 
+            // into the task control block of the process table
             // for further restoring when needed
             update_sp(__get_current_psp());
 
-            // the saved task's state gets changed from running 
+            // the saved task's state gets changed from running
             // to ready, because no other event blocks or terminates
             // the task
             // set_task_state(task_control::TaskStates::READY);
 
-            // the function next_process returns an u32 adress 
+            // the function next_process returns an u32 adress
             // to the runnable successors task's stackpointer, which is
             // saved in the process table. the parameter gets saved
             // into r0, based from this value the registers r4 - r11
-            // gets popped of the stack and written into the cpu's registers. 
+            // gets popped of the stack and written into the cpu's registers.
             __load_process_context(next_process());
         }
     }
