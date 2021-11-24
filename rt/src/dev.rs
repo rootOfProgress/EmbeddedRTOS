@@ -56,11 +56,6 @@ pub mod tim3 {
             ptr::write_volatile(tim3_dier as *mut u32, existing_value | 0b10);
         }
 
-        // let nvic_iser0: u32 = 0xE000E100 | (0x100 + 0x040);
-        // unsafe {
-        //     let existing_value = ptr::read_volatile(nvic_iser0 as *mut u32);
-        //     ptr::write_volatile(nvic_iser0 as *mut u32, existing_value | 0b1 << 29);
-        // }
     }
 
     pub fn set_ccr(threshold: u16) {
@@ -69,11 +64,6 @@ pub mod tim3 {
             let existing_value = ptr::read_volatile(tim3_ccr1 as *mut u32);
             ptr::write_volatile(tim3_ccr1 as *mut u32, existing_value | threshold as u32);
         }
-        // let tim3_ccer: u32 = TIM3_BASE | 0x20;
-        // unsafe {
-        //     let existing_value = ptr::read_volatile(tim3_ccer as *mut u32);
-        //     ptr::write_volatile(tim3_ccer as *mut u32, existing_value | 0b1);
-        // }
     }
 
     pub fn set_prescaler(value: u16) {
@@ -83,12 +73,6 @@ pub mod tim3 {
             ptr::write_volatile(tim3_psc as *mut u32, existing_value | value as u32);
         }
     }
-    // pub fn stop_measurement() {
-    //     unsafe {
-    //         let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
-    //         ptr::write_volatile(TIM2_CR1 as *mut u32, existing_value & !(0b1));
-    //     }
-    // }
     pub fn reset_timer() {
         // TIM3 RESET -> p 166
         let rcc_apb1rstr: u32 = 0x4002_1000 | 0x10;

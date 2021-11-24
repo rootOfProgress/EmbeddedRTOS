@@ -1,5 +1,12 @@
+//!
+//! Contains the process table and appropriate
+//! methods to control task switching. 
+//!
+
 pub mod task_control {
     use core::sync::atomic::{AtomicU32, Ordering};
+
+    /// Represents the possible states of a task.
     pub enum TaskStates {
         READY,
         RUNNING,
@@ -136,6 +143,11 @@ pub mod task_control {
 pub mod scheduler {
 
     extern "C" {
+        ///
+        /// Points to extern asm instruction. Moves
+        /// the current program stack pointer
+        /// to cpu register r0
+        /// 
         pub fn __write_psp(addr: u32);
         fn __save_process_context();
         fn __load_process_context(addr: u32);

@@ -1,6 +1,8 @@
-///
-/// WORK IN PROGRESS
-/// 
+//!
+//! This module offers a API so that user programs can
+//! interact with the OS Kernel to safely request services.
+//!
+
 pub mod call_api {
 
     extern "C" {
@@ -54,6 +56,11 @@ pub mod call_api {
         }
     }
     
+    ///
+    /// The calling task gets suspended for given amount of time.
+    /// # Arguments
+    /// * `time_to_sleep` - An u32 value, determines the sleep time in **ms**
+    /// 
     pub fn sleep(time_to_sleep: u32) {
         let meta = TrapMeta {
             id: TrapReason::Sleep,

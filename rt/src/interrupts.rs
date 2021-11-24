@@ -1,5 +1,11 @@
+//!
+//! Collection of necessary devices for interrupt control.
+//! Provides interrupt device instantiation, adjustment and en-/disable methods.
+//! 
+
 pub mod systick {
     use core::ptr;
+    use crate::mem::memory_handler::{write, read};
     const STK_CTRL: u32 = 0xE000_E010;
     const STK_LOAD: u32 = 0xE000_E014;
     const STK_VAL: u32 = 0xE000_E018;
@@ -21,16 +27,17 @@ pub mod systick {
             systick_reg.stk_run();
         }
         fn stk_load(&self) {
-            unsafe {
-                let mut current_register_content = ptr::read_volatile(STK_LOAD as *const u32);
+            // unsafe {
+                // let mut current_register_content = ptr::read_volatile(STK_LOAD as *const u32);
+                let mut current_register_content = read(STK_LOAD);
 
                 current_register_content &= !(0x00FF_FFFF);
-
-                ptr::write_volatile(
-                    STK_LOAD as *mut u32,
-                    current_register_content | self.cycles_until_zero,
-                );
-            }
+                write(STK_LOAD, current_register_content | self.cycles_until_zero);
+                // ptr::write_volatile(
+                //     STK_LOAD as *mut u32,
+                //     current_register_content | self.cycles_until_zero,
+                // );
+            // }
         }
         fn stk_val_clr(&self) {
             unsafe {

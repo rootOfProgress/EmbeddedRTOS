@@ -7,6 +7,6 @@ pub mod memory_handler {
         }
     }
     pub fn read(dest: u32) -> u32 {
-        unsafe { ptr::read_volatile(dest as *mut u32) }
+        unsafe { ptr::read_volatile(dest as *const u32) }
     }
 }
