@@ -153,23 +153,41 @@ fn set_pending() {
     }
 }
 
+///
+/// 
+/// 
+/// 
+/// 
+/// 
 #[no_mangle]
 pub extern "C" fn PendSV() {
     sched::scheduler::context_switch();
     enable_systick();
 }
 
+
+///
+/// Handles predefined trap instructions.
+/// A trap may only generated from a function with
+/// is provided from the syscall api. Bevor 
+/// executing the trap instruction, the according
+/// syscall id gets written into register r2, which
+/// then gets matched within the handler to provide
+/// the requested service to the user.
+/// 
 #[no_mangle]
 pub extern "C" fn SVCall() {
-    disable_systick();
     unsafe {
-        // __set_exc_return();
-
         let sv_reason: u32;
         asm! ("mov {}, r2", out(reg) sv_reason);
 
         let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
         match trap_meta_info.id {
+            // the calling task passes its desired sleep value within
+            // the trap id. in according to that value the capture compare register of 
+            // timer 3 gets configured. the task state is set to sleeping, the 
+            // timer gets startet and when finishing this steps the scheduler
+            // gets triggered so load the next running task.
             sys::call_api::TrapReason::Sleep => {
                 let time_to_sleep = trap_meta_info.payload;
                 tim3::set_ccr((*time_to_sleep * 8) as u16);
@@ -179,28 +197,37 @@ pub extern "C" fn SVCall() {
                 tim3::start();
                 set_pending();
             }
+            // simply triggers a context switch
             sys::call_api::TrapReason::YieldTask => {
                 set_pending();
             }
+            // endpoint for every task. sets it's state
+            // to completed so the scheduler skips this
+            // task when searching for runnable task.
             sys::call_api::TrapReason::TerminateTask => {
                 task_control::terminate_task();
                 set_pending();
             }
+            // disables task scheduling at all so the calling
+            // task can finish its critical operation without getting disturbed
             sys::call_api::TrapReason::EnableRt => {
                 disable_systick();
                 return;
             }
+            // enables task scheduling. by forgetting the calling task of
+            // "enablert" would run forever or hang in terminated state
             sys::call_api::TrapReason::DisableRt => {
                 enable_systick();
                 return;
             }
+            // writes a string to standard out, which is UART with baud 9600
+            // at PA9 TX / PA10 RX (page 45 stm 32 mapping doc)
             sys::call_api::TrapReason::WriteStdOut => {
                 let str_start = trap_meta_info.payload;
                 print_from_ptr(str_start as *mut u8);
                 enable_systick();
             }
         }
-        // enable_systick();
     }
 }
 
@@ -230,7 +257,6 @@ pub extern "C" fn Tim3Interrupt() {
     // wake up sleeping task
     scheduler::priority_schedule();
 
-    // set_pending();
     enable_systick();
 }
 
