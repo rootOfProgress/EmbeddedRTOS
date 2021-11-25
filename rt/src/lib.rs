@@ -109,10 +109,6 @@ pub unsafe extern "C" fn Reset() -> ! {
     main()
 }
 
-#[link_section = ".vector_table.reset_vector"]
-#[no_mangle]
-pub static RESET_VECTOR: unsafe extern "C" fn() -> ! = Reset;
-
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
     loop {}
@@ -121,6 +117,11 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 pub union Vector {
     reserved: u32,
     handler: unsafe extern "C" fn(),
+}
+
+pub union VectorDivergentFn {
+    reserved: u32,
+    handler: unsafe extern "C" fn() -> !,
 }
 
 extern "C" {
@@ -260,9 +261,15 @@ pub extern "C" fn Tim3Interrupt() {
     enable_systick();
 }
 
+#[link_section = ".vector_table.reset"]
+#[no_mangle]
+pub static RESET: [VectorDivergentFn; 1] = [
+    VectorDivergentFn { handler: Reset }
+];
+
 #[link_section = ".vector_table.exceptions"]
 #[no_mangle]
-pub static EXCEPTIONS: [Vector; 61] = [
+pub static EXCEPTIONS: [Vector; 52] = [
     Vector { handler: NMI },
     Vector { handler: HardFault },
     Vector { handler: MemManage },
@@ -281,33 +288,6 @@ pub static EXCEPTIONS: [Vector; 61] = [
     Vector { handler: SysTick },
     Vector { reserved: 0 }, //wwdg pos 0
     // why reading docs when you can try'n error?? ;p
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
-    Vector {
-        handler: Tim3Interrupt,
-    },
     Vector {
         handler: Tim3Interrupt,
     },

@@ -1,5 +1,4 @@
 
-
 /* generall memory info; manual cortex m4 page 30 */
 MEMORY
 {
@@ -11,15 +10,20 @@ MEMORY
   SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 40K
 }
 
+/* The Entry section expects the symbol name of the first executable 
+piece of code which will be loaded into the processor. Logically it is
+the first part of the .text section. */
 ENTRY(Reset);
-EXTERN(RESET_VECTOR);
+
+/* */
+EXTERN(RESET); 
 EXTERN(EXCEPTIONS);
 SECTIONS
 {
   .vector_table ORIGIN(FLASH) :
   {
     LONG(ORIGIN(SRAM) + LENGTH(SRAM));
-    KEEP(*(.vector_table.reset_vector));
+    KEEP(*(.vector_table.reset));
     KEEP(*(.vector_table.exceptions));
   } > FLASH
 
