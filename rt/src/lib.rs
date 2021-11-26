@@ -120,7 +120,7 @@ pub union Vector {
 }
 
 pub union VectorDivergentFn {
-    reserved: u32,
+    _reserved: u32,
     handler: unsafe extern "C" fn() -> !,
 }
 
@@ -130,7 +130,7 @@ extern "C" {
     fn MemManage();
     fn BusFault();
     fn UsageFault();
-    // fn PendSV();
+    fn __get_r0() -> u32;
     fn __set_exc_return();
 }
 
@@ -179,10 +179,7 @@ pub extern "C" fn PendSV() {
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
-        let sv_reason: u32;
-        asm! ("mov {}, r2", out(reg) sv_reason);
-
-        let trap_meta_info: &mut TrapMeta = &mut *(sv_reason as *mut TrapMeta);
+        let trap_meta_info: &mut TrapMeta = &mut *(__get_r0() as *mut TrapMeta);
         match trap_meta_info.id {
             // the calling task passes its desired sleep value within
             // the trap id. in according to that value the capture compare register of 

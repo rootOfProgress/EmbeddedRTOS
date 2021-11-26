@@ -5,6 +5,7 @@
 .global __set_exc_return
 .global __instant_start
 .global __trap
+.global __get_r0
 .cpu cortex-m4
 .syntax unified
 .thumb
@@ -19,6 +20,9 @@ __save_process_context:
 	msr psp, r0
 	bx lr
 
+__get_r0:
+	bx lr
+
 __load_process_context:
 	ldmfd r0!, {r4-r11}
 	msr psp, r0
@@ -28,7 +32,6 @@ __instant_start:
 	bx pc
 
 __trap:
-	mov r2, r0
 	svc 0
 	bx lr
 
