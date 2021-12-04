@@ -1,3 +1,9 @@
+//!
+//! Contains the first entrypoint for startup procedure.
+//! Only for runtime purposes, acts as a platform for the kernel
+//! code build on top of it.
+//!
+
 #![no_main]
 #![no_std]
 #![feature(asm)]
@@ -63,6 +69,10 @@ fn enable_serial_printing() {
     usart1.enable();
 }
 
+///
+/// Mandatory resetfunction at adress 0x08000004.
+/// Gets called after power on the cpu.
+///
 #[no_mangle]
 pub unsafe extern "C" fn Reset() -> ! {
     setup_clock_system();
@@ -258,6 +268,10 @@ pub extern "C" fn Tim3Interrupt() {
     enable_systick();
 }
 
+///
+/// Manually create a section which points to the adress of 
+/// the reset function.
+///
 #[link_section = ".vector_table.reset"]
 #[no_mangle]
 pub static RESET: [VectorDivergentFn; 1] = [
