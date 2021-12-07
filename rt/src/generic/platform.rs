@@ -22,6 +22,7 @@ pub mod offsets {
     }
     pub mod tim {
         pub const DIER: u32 = 0x0C;
+        pub const SR: u32 = 0x10;
         pub const EGR: u32 = 0x14;
         pub const CNT: u32 = 0x24;
         pub const PSC: u32 = 0x28;
@@ -37,5 +38,11 @@ pub mod bitfields {
     } 
     pub mod usart1 {
         pub const USART1EN: u32 = 14;
+    }
+    pub mod tim {
+        pub const CEN: u32 = 0b1;
+        pub const UG: u32 = 0b1;
+        pub const UDIS: u32 = 0b10;
+        pub const CC1IE: u32 = 0b10;
     }
 }

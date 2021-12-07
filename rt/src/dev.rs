@@ -2,17 +2,19 @@ use super::mem;
 use super::platform;
 
 pub mod tim3 {
+    use crate::generic::platform::bitfields;
+
     use super::mem::memory_handler::{read, write};
     use super::platform::{adresses, offsets};
     const TIM3_BASE: u32 = adresses::TIM3_BASEADRESS;
     use core::ptr;
 
     pub fn start() {
-        write(TIM3_BASE, read(TIM3_BASE) | 0b1);
+        write(TIM3_BASE, read(TIM3_BASE) | bitfields::tim::CEN);
     }
 
     pub fn clear_udis() {
-        write(TIM3_BASE, read(TIM3_BASE) & !(0b10));
+        write(TIM3_BASE, read(TIM3_BASE) & !(bitfields::tim::UDIS));
     }
 
     pub fn flush() {
@@ -21,29 +23,24 @@ pub mod tim3 {
     }
 
     pub fn clear_uif() {
-        let tim3_sr = TIM3_BASE | 0x10;
-        unsafe {
-            let existing_value = read(tim3_sr);
-            ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1111));
-            ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1 << 6));
-        }
+        let tim3_sr = TIM3_BASE | offsets::tim::SR;
+        let existing_value = read(tim3_sr);
+        write(tim3_sr, existing_value & !(0b1111));
+        write(tim3_sr, existing_value & !(0b1 << 6));
     }
 
     pub fn set_ug() {
         let tim3_egr = TIM3_BASE | offsets::tim::EGR;
-        unsafe {
-            let existing_value = read(tim3_egr);
-            ptr::write_volatile(tim3_egr as *mut u32, existing_value | 0b1);
-        }
+        write(tim3_egr, read(tim3_egr) | bitfields::tim::UG);
     }
 
     pub fn stop() {
-        write(TIM3_BASE, read(TIM3_BASE) & !(0b1));
+        write(TIM3_BASE, read(TIM3_BASE) & !(bitfields::tim::CEN));
     }
 
     pub fn enable_interrupt() {
         let tim3_dier: u32 = TIM3_BASE | offsets::tim::DIER;
-        write(tim3_dier, read(tim3_dier) | 0b10);
+        write(tim3_dier, read(tim3_dier) | bitfields::tim::CC1IE);
     }
 
     pub fn set_ccr(threshold: u16) {
@@ -58,12 +55,10 @@ pub mod tim3 {
     pub fn reset_timer() {
         // TIM3 RESET -> p 166
         let rcc_apb1rstr: u32 = 0x4002_1000 | 0x10;
-        unsafe {
-            let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
-            ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b10);
-            let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
-            ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value & !(0b10));
-        }
+        let existing_value = read(rcc_apb1rstr);
+        write(rcc_apb1rstr, existing_value | 0b10);
+        let existing_value = read(rcc_apb1rstr);
+        write(rcc_apb1rstr, existing_value & !(0b10));
     }
     pub fn read_value() -> u32 {
         let timx_cnt: u32 = TIM3_BASE | 0x24;
