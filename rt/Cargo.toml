@@ -9,3 +9,6 @@ edition = "2018"
 
 [build-dependencies]
 cc = "1.0.25"
+
+[features]
+f303 = []

@@ -9,15 +9,19 @@
 #![feature(asm)]
 
 pub mod dev;
+pub mod generic;
 pub mod interrupts;
 pub mod mem;
 pub mod sched;
 pub mod sys;
+
 use crate::sched::{scheduler, task_control};
 use core::panic::PanicInfo;
 use core::ptr;
 use dev::{tim3, uart::print_from_ptr};
+use generic::register::{self, adresses, offsets};
 use interrupts::systick::{disable_systick, enable_systick};
+use mem::memory_handler::{read, write};
 use sys::call_api::TrapMeta;
 
 fn enable_gpio_e_leds() {
@@ -41,22 +45,18 @@ fn enable_gpio_e_leds() {
 fn setup_clock_system() {
     // turn on gpio clock
     // see p 166 -> IOPAEN
-    let rcc_ahbenr = 0x40021000 | 0x14;
-    unsafe { ptr::write_volatile(rcc_ahbenr as *mut u32, 1 << 17 | 1 << 21) }
+    let rcc_ahbenr = adresses::RCC | offsets::rcc::RCC_AHBENR;
+    write(rcc_ahbenr, 1 << 17 | 1 << 21);
 
     // TIM2 and 3 EN -> p 166
-    let rcc_apb1enr: u32 = 0x40021000 | 0x1C;
-    unsafe {
-        let existing_value = ptr::read_volatile(rcc_apb1enr as *mut u32);
-        ptr::write_volatile(rcc_apb1enr as *mut u32, existing_value | 0b11);
-    }
+    let rcc_apb1enr: u32 = adresses::RCC | offsets::rcc::RCC_APB1ENR;
+    let existing_value = read(rcc_apb1enr);
+    write(rcc_apb1enr, existing_value | 0b11);
 
     // USART1EN -> p 166
-    let rcc_apb2enr: u32 = 0x4002_1000 | 0x18;
-    unsafe {
-        let existing_value = ptr::read_volatile(rcc_apb2enr as *mut u32);
-        ptr::write_volatile(rcc_apb2enr as *mut u32, existing_value | (0b1 << 14 | 0b1));
-    }
+    let rcc_apb2enr: u32 = adresses::RCC | offsets::rcc::RCC_APB2ENR;
+    let existing_value = read(rcc_apb2enr);
+    write(rcc_apb2enr, existing_value | (0b1 << 14 | 0b1));
 }
 
 fn enable_serial_printing() {
@@ -154,46 +154,43 @@ pub extern "C" fn SysTick() {
 }
 
 fn set_pending() {
-    unsafe {
-        // Interrupt control and state register, page 225
-        // baseadress: scb, p221 4.4, line 3
-        // offset: 4.4.3, p225
-        let icsr_pendsvset: u32 = 0xE000ED04 | 0x04;
-        let existing_value = ptr::read_volatile(icsr_pendsvset as *mut u32);
-        ptr::write_volatile(icsr_pendsvset as *mut u32, existing_value | (0b1 << 28));
-    }
+    // Interrupt control and state register, page 225
+    // baseadress: scb, p221 4.4, line 3
+    // offset: 4.4.3, p225
+    let icsr_pendsvset: u32 = 0xE000ED04 | 0x04;
+    let existing_value = read(icsr_pendsvset);
+    write(icsr_pendsvset, existing_value | (0b1 << 28));
 }
 
 ///
-/// 
-/// 
-/// 
-/// 
-/// 
+///
+///
+///
+///
+///
 #[no_mangle]
 pub extern "C" fn PendSV() {
     sched::scheduler::context_switch();
     enable_systick();
 }
 
-
 ///
 /// Handles predefined trap instructions.
 /// A trap may only generated from a function with
-/// is provided from the syscall api. Bevor 
+/// is provided from the syscall api. Bevor
 /// executing the trap instruction, the according
 /// syscall id gets written into register r2, which
 /// then gets matched within the handler to provide
 /// the requested service to the user.
-/// 
+///
 #[no_mangle]
 pub extern "C" fn SVCall() {
     unsafe {
         let trap_meta_info: &mut TrapMeta = &mut *(__get_r0() as *mut TrapMeta);
         match trap_meta_info.id {
             // the calling task passes its desired sleep value within
-            // the trap id. in according to that value the capture compare register of 
-            // timer 3 gets configured. the task state is set to sleeping, the 
+            // the trap id. in according to that value the capture compare register of
+            // timer 3 gets configured. the task state is set to sleeping, the
             // timer gets startet and when finishing this steps the scheduler
             // gets triggered so load the next running task.
             sys::call_api::TrapReason::Sleep => {
@@ -269,14 +266,12 @@ pub extern "C" fn Tim3Interrupt() {
 }
 
 ///
-/// Manually create a section which points to the adress of 
+/// Manually create a section which points to the adress of
 /// the reset function.
 ///
 #[link_section = ".vector_table.reset"]
 #[no_mangle]
-pub static RESET: [VectorDivergentFn; 1] = [
-    VectorDivergentFn { handler: Reset }
-];
+pub static RESET: [VectorDivergentFn; 1] = [VectorDivergentFn { handler: Reset }];
 
 #[link_section = ".vector_table.exceptions"]
 #[no_mangle]

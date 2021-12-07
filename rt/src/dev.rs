@@ -1,7 +1,11 @@
-pub mod tim3 {
-    const TIM3_BASE: u32 = 0x4000_0400;
-    use core::ptr;
+use super::register;
+use super::mem;
 
+pub mod tim3 {
+    use super::register::adresses;
+    const TIM3_BASE: u32 = adresses::TIM3_BASEADRESS;
+    use core::ptr;
+    
     pub fn start() {
         unsafe {
             let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
@@ -90,14 +94,15 @@ pub mod tim3 {
 }
 
 pub mod tim2 {
-    const TIM2_CR1: u32 = 0x4000_0000;
+    use super::register::{adresses, offsets};
+    use super::mem::memory_handler::{read, write};
+
+    const TIM2_CR1: u32 = adresses::TIM2_BASEADRESS;
     use core::ptr;
 
     pub fn start_measurement() {
-        unsafe {
-            let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
-            ptr::write_volatile(TIM2_CR1 as *mut u32, existing_value | 0b1);
-        }
+            let existing_value = read(TIM2_CR1);
+            write(TIM2_CR1, existing_value | 0b1);
     }
     pub fn stop_measurement() {
         unsafe {
@@ -107,7 +112,7 @@ pub mod tim2 {
     }
     pub fn reset_timer() {
         // TIM2 RESET -> p 166
-        let rcc_apb1rstr: u32 = 0x4002_1000 | 0x10;
+        let rcc_apb1rstr: u32 = adresses::RCC | 0x10;
         unsafe {
             let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
             ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
@@ -116,7 +121,7 @@ pub mod tim2 {
         }
     }
     pub fn read_value() -> u32 {
-        let timx_cnt: u32 = 0x4000_0000 | 0x24;
+        let timx_cnt: u32 = adresses::TIM2_BASEADRESS | 0x24;
         unsafe { (ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)) * 125 }
     }
 }
