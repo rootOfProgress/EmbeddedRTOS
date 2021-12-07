@@ -1,80 +1,59 @@
 use super::mem;
-use super::register;
+use super::platform;
 
 pub mod tim3 {
-    use super::register::adresses;
+    use super::mem::memory_handler::{read, write};
+    use super::platform::{adresses, offsets};
     const TIM3_BASE: u32 = adresses::TIM3_BASEADRESS;
     use core::ptr;
 
     pub fn start() {
-        unsafe {
-            let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
-            ptr::write_volatile(TIM3_BASE as *mut u32, existing_value | 0b1);
-        }
+        write(TIM3_BASE, read(TIM3_BASE) | 0b1);
     }
 
     pub fn clear_udis() {
-        unsafe {
-            let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
-            ptr::write_volatile(TIM3_BASE as *mut u32, existing_value & !(0b10));
-        }
+        write(TIM3_BASE, read(TIM3_BASE) & !(0b10));
     }
 
     pub fn flush() {
-        let timx_cnt: u32 = TIM3_BASE | 0x24;
-        unsafe {
-            let existing_value = ptr::read_volatile(timx_cnt as *mut u32);
-            ptr::write_volatile(timx_cnt as *mut u32, existing_value & !(0xFFFF));
-        }
+        let timx_cnt: u32 = TIM3_BASE | offsets::tim::CNT;
+        write(timx_cnt, read(timx_cnt) & !(0xFFFF));
     }
 
     pub fn clear_uif() {
         let tim3_sr = TIM3_BASE | 0x10;
         unsafe {
-            let existing_value = ptr::read_volatile(tim3_sr as *mut u32);
+            let existing_value = read(tim3_sr);
             ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1111));
             ptr::write_volatile(tim3_sr as *mut u32, existing_value & !(0b1 << 6));
         }
     }
 
     pub fn set_ug() {
-        let tim3_egr = TIM3_BASE | 0x14;
+        let tim3_egr = TIM3_BASE | offsets::tim::EGR;
         unsafe {
-            let existing_value = ptr::read_volatile(tim3_egr as *mut u32);
+            let existing_value = read(tim3_egr);
             ptr::write_volatile(tim3_egr as *mut u32, existing_value | 0b1);
-            // ptr::write_volatile(tim3_sr  as *mut u32, existing_value & !(0b1 << 6));
         }
     }
 
     pub fn stop() {
-        unsafe {
-            let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
-            ptr::write_volatile(TIM3_BASE as *mut u32, existing_value & !(0b1));
-        }
+        write(TIM3_BASE, read(TIM3_BASE) & !(0b1));
     }
 
     pub fn enable_interrupt() {
-        let tim3_dier: u32 = TIM3_BASE | 0x0C;
-        unsafe {
-            let existing_value = ptr::read_volatile(tim3_dier as *mut u32);
-            ptr::write_volatile(tim3_dier as *mut u32, existing_value | 0b10);
-        }
+        let tim3_dier: u32 = TIM3_BASE | offsets::tim::DIER;
+        write(tim3_dier, read(tim3_dier) | 0b10);
     }
 
     pub fn set_ccr(threshold: u16) {
-        let tim3_ccr1: u32 = TIM3_BASE | 0x34;
-        unsafe {
-            let existing_value = ptr::read_volatile(tim3_ccr1 as *mut u32);
-            ptr::write_volatile(tim3_ccr1 as *mut u32, existing_value | threshold as u32);
-        }
+        let tim3_ccr1: u32 = TIM3_BASE | offsets::tim::CCR1;
+        write(tim3_ccr1, read(tim3_ccr1) | threshold as u32);
     }
 
     pub fn set_prescaler(value: u16) {
-        let tim3_psc: u32 = TIM3_BASE | 0x28;
-        unsafe {
-            let existing_value = ptr::read_volatile(tim3_psc as *mut u32);
-            ptr::write_volatile(tim3_psc as *mut u32, existing_value | value as u32);
-        }
+        let tim3_psc: u32 = TIM3_BASE | offsets::tim::PSC;
+        write(tim3_psc, read(tim3_psc) | value as u32);
     }
     pub fn reset_timer() {
         // TIM3 RESET -> p 166
@@ -94,7 +73,7 @@ pub mod tim3 {
 
 pub mod tim2 {
     use super::mem::memory_handler::{read, write};
-    use super::register::{adresses, offsets};
+    use super::platform::{adresses, offsets};
 
     const TIM2_CR1: u32 = adresses::TIM2_BASEADRESS;
     use core::ptr;
@@ -127,7 +106,7 @@ pub mod uart {
     const USART1_BASE: u32 = adresses::USART1_BASEADRESS;
     use core::ptr;
 
-    use crate::generic::register::{adresses, offsets};
+    use crate::generic::platform::{adresses, offsets};
     pub struct UsartX {
         usart_base_adress: u32,
         bus_number: u8,

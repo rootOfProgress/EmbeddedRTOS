@@ -19,7 +19,7 @@ use crate::sched::{scheduler, task_control};
 use core::panic::PanicInfo;
 use core::ptr;
 use dev::{tim3, uart::print_from_ptr};
-use generic::register::{self, adresses, offsets, bitfields};
+use generic::platform::{self, adresses, offsets, bitfields};
 use interrupts::systick::{disable_systick, enable_systick};
 use mem::memory_handler::{read, write};
 use sys::call_api::TrapMeta;
@@ -54,7 +54,7 @@ fn setup_clock_system() {
 
     // USART1EN -> p 166
     let rcc_apb2enr: u32 = adresses::RCC | offsets::rcc::RCC_APB2ENR;
-    write(rcc_apb2enr, read(rcc_apb2enr) | (0b1 << bitfields::usart1::USART1EN | 0b1));
+    write(rcc_apb2enr, read(rcc_apb2enr) | ((0b1 << bitfields::usart1::USART1EN) | 0b1));
 }
 
 fn enable_serial_printing() {
