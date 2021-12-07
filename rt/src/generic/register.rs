@@ -11,9 +11,26 @@ pub mod adresses {
 
 pub mod offsets {
     pub mod rcc {
+        pub const RCC_APB1RSTR: u32 = 0x10;
         pub const RCC_AHBENR: u32 = 0x14;
         pub const RCC_APB2ENR: u32 = 0x18;
         pub const RCC_APB1ENR: u32 = 0x1C;
     }
+    pub mod usart1 {
+        pub const TDR: u32 = 0x28;
+        pub const ISR: u32 = 0x1C;
+    }
+    pub mod tim {
+        pub const CNT: u32 = 0x24;
+    }
+}
 
+pub mod bitfields {
+    pub mod rcc {
+        pub const IOPAEN: u32 = 17;
+        pub const IOPEEN: u32 = 21;
+    } 
+    pub mod usart1 {
+        pub const USART1EN: u32 = 0x28;
+    }
 }

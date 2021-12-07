@@ -19,7 +19,7 @@ use crate::sched::{scheduler, task_control};
 use core::panic::PanicInfo;
 use core::ptr;
 use dev::{tim3, uart::print_from_ptr};
-use generic::register::{self, adresses, offsets};
+use generic::register::{self, adresses, offsets, bitfields};
 use interrupts::systick::{disable_systick, enable_systick};
 use mem::memory_handler::{read, write};
 use sys::call_api::TrapMeta;
@@ -46,17 +46,15 @@ fn setup_clock_system() {
     // turn on gpio clock
     // see p 166 -> IOPAEN
     let rcc_ahbenr = adresses::RCC | offsets::rcc::RCC_AHBENR;
-    write(rcc_ahbenr, 1 << 17 | 1 << 21);
+    write(rcc_ahbenr, 1 << bitfields::rcc::IOPAEN | 1 << bitfields::rcc::IOPEEN);
 
     // TIM2 and 3 EN -> p 166
     let rcc_apb1enr: u32 = adresses::RCC | offsets::rcc::RCC_APB1ENR;
-    let existing_value = read(rcc_apb1enr);
-    write(rcc_apb1enr, existing_value | 0b11);
+    write(rcc_apb1enr, read(rcc_apb1enr) | 0b11);
 
     // USART1EN -> p 166
     let rcc_apb2enr: u32 = adresses::RCC | offsets::rcc::RCC_APB2ENR;
-    let existing_value = read(rcc_apb2enr);
-    write(rcc_apb2enr, existing_value | (0b1 << 14 | 0b1));
+    write(rcc_apb2enr, read(rcc_apb2enr) | (0b1 << bitfields::usart1::USART1EN | 0b1));
 }
 
 fn enable_serial_printing() {

@@ -1,11 +1,11 @@
-use super::register;
 use super::mem;
+use super::register;
 
 pub mod tim3 {
     use super::register::adresses;
     const TIM3_BASE: u32 = adresses::TIM3_BASEADRESS;
     use core::ptr;
-    
+
     pub fn start() {
         unsafe {
             let existing_value = ptr::read_volatile(TIM3_BASE as *mut u32);
@@ -59,7 +59,6 @@ pub mod tim3 {
             let existing_value = ptr::read_volatile(tim3_dier as *mut u32);
             ptr::write_volatile(tim3_dier as *mut u32, existing_value | 0b10);
         }
-
     }
 
     pub fn set_ccr(threshold: u16) {
@@ -94,25 +93,21 @@ pub mod tim3 {
 }
 
 pub mod tim2 {
-    use super::register::{adresses, offsets};
     use super::mem::memory_handler::{read, write};
+    use super::register::{adresses, offsets};
 
     const TIM2_CR1: u32 = adresses::TIM2_BASEADRESS;
     use core::ptr;
 
     pub fn start_measurement() {
-            let existing_value = read(TIM2_CR1);
-            write(TIM2_CR1, existing_value | 0b1);
+        write(TIM2_CR1, read(TIM2_CR1) | 0b1);
     }
     pub fn stop_measurement() {
-        unsafe {
-            let existing_value = ptr::read_volatile(TIM2_CR1 as *mut u32);
-            ptr::write_volatile(TIM2_CR1 as *mut u32, existing_value & !(0b1));
-        }
+        write(TIM2_CR1, read(TIM2_CR1) & !(0b1));
     }
     pub fn reset_timer() {
         // TIM2 RESET -> p 166
-        let rcc_apb1rstr: u32 = adresses::RCC | 0x10;
+        let rcc_apb1rstr: u32 = adresses::RCC | offsets::rcc::RCC_APB1RSTR;
         unsafe {
             let existing_value = ptr::read_volatile(rcc_apb1rstr as *mut u32);
             ptr::write_volatile(rcc_apb1rstr as *mut u32, existing_value | 0b1);
@@ -121,8 +116,8 @@ pub mod tim2 {
         }
     }
     pub fn read_value() -> u32 {
-        let timx_cnt: u32 = adresses::TIM2_BASEADRESS | 0x24;
-        unsafe { (ptr::read_volatile(timx_cnt as *mut u32) & !(0b1 << 31)) * 125 }
+        let timx_cnt: u32 = adresses::TIM2_BASEADRESS | offsets::tim::CNT;
+        (read(timx_cnt) & !(0b1 << 31)) * 125
     }
 }
 
@@ -132,7 +127,7 @@ pub mod uart {
     const USART1_BASE: u32 = adresses::USART1_BASEADRESS;
     use core::ptr;
 
-    use crate::generic::register::adresses;
+    use crate::generic::register::{adresses, offsets};
     pub struct UsartX {
         usart_base_adress: u32,
         bus_number: u8,
@@ -152,22 +147,22 @@ pub mod uart {
         pub fn enable(&self) {
             let usartx_brr = self.usart_base_adress | 0x0C;
             let baudrate_divisor = 8_000_000 / self.baudrate;
-                // clk / 9600 baud
-                write(usartx_brr, baudrate_divisor);
+            // clk / 9600 baud
+            write(usartx_brr, baudrate_divisor);
 
             let usart1_cr1 = self.usart_base_adress;
-                let existing_value = read(usart1_cr1);
-                write(usart1_cr1, existing_value | (0b1100));
-                let existing_value = read(usart1_cr1);
-                write(usart1_cr1, existing_value | (0b1));
+            let existing_value = read(usart1_cr1);
+            write(usart1_cr1, existing_value | (0b1100));
+            let existing_value = read(usart1_cr1);
+            write(usart1_cr1, existing_value | (0b1));
         }
     }
 
     // propably the world's worst and slowest function to print stupid integers on
     // a screen
     pub fn print_dec(mut dec: u32) {
-        let usart2_tdr = 0x4001_3800 | 0x28;
-        let usart2_isr = 0x4001_3800 | 0x1C;
+        let usart2_tdr = adresses::USART1_BASEADRESS | offsets::usart1::TDR;
+        let usart2_isr = adresses::USART1_BASEADRESS | offsets::usart1::ISR;
         let mut buffer: [u8; 32] = unsafe { core::mem::zeroed() };
         let mut cnt: u8 = 0;
         while dec > 0 {
@@ -184,27 +179,25 @@ pub mod uart {
     }
 
     pub fn print_from_ptr(mut ptr_start: *mut u8) {
-        let usart2_tdr = 0x4001_3800 | 0x28;
-        let usart2_isr = 0x4001_3800 | 0x1C;
+        let usart2_tdr = adresses::USART1_BASEADRESS | offsets::usart1::TDR;
+        let usart2_isr = adresses::USART1_BASEADRESS | offsets::usart1::ISR;
 
         unsafe {
             while *ptr_start != b'\0' {
-                ptr::write_volatile(usart2_tdr as *mut u32, *ptr_start as u32);
+                write(usart2_tdr, *ptr_start as u32);
                 ptr_start = ptr_start.add(1);
-                while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
+                while !((read(usart2_isr) & 0x80) != 0) {}
             }
         }
     }
 
     pub fn print_str(msg: &str) {
-        let usart2_tdr = 0x4001_3800 | 0x28;
-        let usart2_isr = 0x4001_3800 | 0x1C;
+        let usart2_tdr = adresses::USART1_BASEADRESS | offsets::usart1::TDR;
+        let usart2_isr = adresses::USART1_BASEADRESS | offsets::usart1::ISR;
 
         for c in msg.chars() {
-            unsafe {
-                ptr::write_volatile(usart2_tdr as *mut u32, c as u32);
-                while !((ptr::read_volatile(usart2_isr as *mut u32) & 0x80) != 0) {}
-            }
+            write(usart2_tdr, c as u32);
+            while !((read(usart2_isr) & 0x80) != 0) {}
         }
     }
 }
