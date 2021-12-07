@@ -30,8 +30,7 @@ pub mod systick {
             write(STK_LOAD, current_register_content | self.cycles_until_zero);
         }
         fn stk_val_clr(&self) {
-            let current_register_content = read(STK_VAL);
-            write(STK_VAL, current_register_content & !(0x00FF_FFFF));
+            write(STK_VAL, read(STK_VAL) & !(0x00FF_FFFF));
         }
         fn stk_run(&self) {
             let mut existing_val = read(STK_CTRL);
@@ -43,13 +42,9 @@ pub mod systick {
         }
     }
     pub fn disable_systick() {
-        let mut existing_val = read(STK_CTRL);
-        existing_val &= !(0b1);
-        write(STK_CTRL, existing_val);
+        write(STK_CTRL, read(STK_CTRL) & !(0b1));
     }
     pub fn enable_systick() {
-        let mut existing_val = read(STK_CTRL);
-        existing_val |= 0b1;
-        write(STK_CTRL, existing_val);
+        write(STK_CTRL, read(STK_CTRL) | 0b1);
     }
 }

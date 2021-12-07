@@ -128,8 +128,11 @@ pub mod tim2 {
 
 // NOTE: ONLY FOR TESTPURPOSES, NO GENERIC USART DRIVER YET!
 pub mod uart {
-    const USART1_BASE: u32 = 0x4001_3800;
+    use super::mem::memory_handler::{read, write};
+    const USART1_BASE: u32 = adresses::USART1_BASEADRESS;
     use core::ptr;
+
+    use crate::generic::register::adresses;
     pub struct UsartX {
         usart_base_adress: u32,
         bus_number: u8,
@@ -149,18 +152,14 @@ pub mod uart {
         pub fn enable(&self) {
             let usartx_brr = self.usart_base_adress | 0x0C;
             let baudrate_divisor = 8_000_000 / self.baudrate;
-            unsafe {
                 // clk / 9600 baud
-                ptr::write_volatile(usartx_brr as *mut u32, baudrate_divisor);
-            }
+                write(usartx_brr, baudrate_divisor);
 
             let usart1_cr1 = self.usart_base_adress;
-            unsafe {
-                let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-                ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1100));
-                let existing_value = ptr::read_volatile(usart1_cr1 as *mut u32);
-                ptr::write_volatile(usart1_cr1 as *mut u32, existing_value | (0b1));
-            }
+                let existing_value = read(usart1_cr1);
+                write(usart1_cr1, existing_value | (0b1100));
+                let existing_value = read(usart1_cr1);
+                write(usart1_cr1, existing_value | (0b1));
         }
     }
 
