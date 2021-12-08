@@ -20,6 +20,7 @@ use core::panic::PanicInfo;
 use core::ptr;
 use dev::{tim3, uart::print_from_ptr};
 use generic::platform::{self, adresses, offsets, bitfields};
+use generic::cpu::{self, c_adresses, c_offsets, c_bitfields};
 use interrupts::systick::{disable_systick, enable_systick};
 use mem::memory_handler::{read, write};
 use sys::call_api::TrapMeta;
@@ -155,9 +156,9 @@ fn set_pending() {
     // Interrupt control and state register, page 225
     // baseadress: scb, p221 4.4, line 3
     // offset: 4.4.3, p225
-    let icsr_pendsvset: u32 = 0xE000ED04 | 0x04;
+    let icsr_pendsvset: u32 = c_adresses::SCB | c_offsets::scb::ICSR;
     let existing_value = read(icsr_pendsvset);
-    write(icsr_pendsvset, existing_value | (0b1 << 28));
+    write(icsr_pendsvset, existing_value | (0b1 << c_bitfields::icsr::PENDSVSET));
 }
 
 ///
