@@ -6,19 +6,18 @@ extern crate userspace;
 
 use core::*;
 use rt::interrupts;
-use rt::sched::{scheduler, task_control, process};
+use rt::sched::{process, scheduler, task_control};
 
 #[no_mangle]
 pub fn main() -> ! {
-    let process_1 = process::ProcessFrame::new(userspace::user::user::context2 as *const () as u32);
-    let process_2 = process::ProcessFrame::new(userspace::user::user::context3 as *const () as u32);
-    let process_3 = process::ProcessFrame::new(userspace::user::user::context1 as *const () as u32);
-    let process_4 = process::ProcessFrame::new(userspace::user::user::context0 as *const () as u32);
+    let process_1 = process::ProcessFrame::new(userspace::user::context2 as *const () as u32);
+    let process_2 = process::ProcessFrame::new(userspace::user::context3 as *const () as u32);
+    let process_3 = process::ProcessFrame::new(userspace::user::context1 as *const () as u32);
+    let process_4 = process::ProcessFrame::new(userspace::user::context0 as *const () as u32);
     task_control::insert(ptr::addr_of!(process_1.r4) as u32);
     task_control::insert(ptr::addr_of!(process_2.r4) as u32);
     task_control::insert(ptr::addr_of!(process_3.r4) as u32);
     task_control::insert(ptr::addr_of!(process_4.r4) as u32);
-
 
     scheduler::load();
 
