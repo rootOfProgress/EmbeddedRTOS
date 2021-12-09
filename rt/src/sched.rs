@@ -2,6 +2,55 @@
 //! Contains the process table and appropriate
 //! methods to control task switching.
 //!
+use super::sys;
+pub mod process {
+    use super::sys::call_api;
+    #[repr(C)]
+    pub struct ProcessFrame {
+        free_space: [u32; 256],
+        pub r4: u32,
+        r5: u32,
+        r6: u32,
+        r7: u32,
+        r8: u32,
+        r9: u32,
+        r10: u32,
+        r11: u32,
+        r0: u32,
+        r1: u32,
+        r2: u32,
+        r3: u32,
+        r12: u32,
+        lr: u32,
+        pc: u32,
+        psr: u32,
+    }
+    
+    impl ProcessFrame {
+        pub fn new(target: u32) -> ProcessFrame {
+            ProcessFrame {
+                free_space: unsafe { core::mem::zeroed() },
+                r4: 0x66a,
+                r5: 0x669,
+                r6: 0x668,
+                r7: 0x667,
+                r8: 0x666,
+                r9: 0x665,
+                r10: 0x664,
+                r11: 0x663,
+                r0: 0x110,
+                r1: 0xAA,
+                r2: 0xBB,
+                r3: 0xCC,
+                r12: 0x9978a,
+                lr: call_api::terminate as *const () as u32,
+                pc: target,
+                psr: 0x21000000,
+            }
+        }
+    } 
+}
+
 
 pub mod task_control {
     use core::sync::atomic::{AtomicU32, Ordering};
@@ -156,9 +205,9 @@ pub mod scheduler {
     }
     use super::task_control::{get_sleeping, next_process, update_sp};
 
-    pub fn immediate_start(addr: *const u32) {
+    pub fn load() {
         unsafe {
-            __load_process_context(addr as u32);
+            __load_process_context(next_process());
         }
     }
 
