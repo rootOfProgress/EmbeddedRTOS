@@ -3,7 +3,6 @@
 //! Only for runtime purposes, acts as a platform for the kernel
 //! code build on top of it.
 //!
-
 #![no_main]
 #![no_std]
 #![feature(asm)]
