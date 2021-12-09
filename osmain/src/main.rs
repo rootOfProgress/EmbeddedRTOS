@@ -65,45 +65,24 @@ fn fibonacci(n: u32) -> u32 {
 
 fn context4() {
     loop {
-        // print_str("c4\n\r");
-
-        // turn on led
-        // call_api::println("on \n\r\0");
         unsafe {
             let mut reg_content = ptr::read_volatile(0x4800_1014 as *mut u32);
             reg_content |= (0b1_u32) << 12;
             ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
         }
         call_api::sleep(500);
-
-        // call_api::println("off \n\r\0");
-        // turn off led
         unsafe {
             let mut reg_content = ptr::read_volatile(0x4800_1014 as *mut u32);
             reg_content &= !((0b1_u32) << 12);
             ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
         }
         call_api::sleep(500);
-        // unsafe {
-        //     let mut reg_content = 0x0000_0000;
-        //     reg_content |= (0b1_u32) << 12;
-        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
-        // call_api::println("should not repeat \0\n\r");
-        // task_control::set_task_state(task_control::TaskStates::BLOCKED);
-        // call_api::yield_task();
     }
 }
 
 fn context3() {
     loop {
-        // print_str("c3\n\r");
         call_api::yield_task();
-        // unsafe {
-        // let mut reg_content = 0x0000_0000;
-        // reg_content |= (0b1_u32) << 12;
-        // ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
     }
 }
 
@@ -112,22 +91,10 @@ fn context2() {
 
     loop {
         fibonacci(22);
-        // pr        fibonacci(22);int_str("c2\n\r");
-        // unsafe {
-        //     let mut reg_content = 0x0000_0000;
-        //     reg_content |= (0b1_u32) << 14;
-        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
     }
 }
 fn context1() {
     loop {
-        // unsafe {
-        //     let mut reg_content = 0x0000_0000;
-        //     reg_content |= (0b1_u32) << 13;
-        //     ptr::write_volatile(0x4800_1014 as *mut u32, reg_content);
-        // }
-        // print_str("c1\n\r");
         tim2::start_measurement();
         call_api::enable_rt_mode();
         fibonacci(22);
