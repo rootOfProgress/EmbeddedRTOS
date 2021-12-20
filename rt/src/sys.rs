@@ -13,6 +13,8 @@ pub mod call_api {
     pub enum TrapReason {
         EnableRt,
         DisableRt,
+        StartMeasurement,
+        StopMeasurement,
         YieldTask,
         TerminateTask,
         Sleep,
@@ -39,6 +41,26 @@ pub mod call_api {
     pub fn enable_rt_mode() {
         let meta = TrapMeta {
             id: TrapReason::EnableRt,
+            payload: 0x0 as *const u32
+        };
+        unsafe {
+            __trap(&meta);
+        }
+    }
+
+    pub fn start_time_measure() {
+        let meta = TrapMeta {
+            id: TrapReason::StartMeasurement,
+            payload: 0x0 as *const u32
+        };
+        unsafe {
+            __trap(&meta);
+        }
+    }
+
+    pub fn stop_time_measure() {
+        let meta = TrapMeta {
+            id: TrapReason::StopMeasurement,
             payload: 0x0 as *const u32
         };
         unsafe {

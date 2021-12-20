@@ -1,6 +1,6 @@
 use super::mem;
 use super::platform;
-
+use super::cpu;
 pub mod tim3 {
     use crate::generic::platform::bitfields;
 
@@ -98,6 +98,8 @@ pub mod tim2 {
 // NOTE: ONLY FOR TESTPURPOSES, NO GENERIC USART DRIVER YET!
 pub mod uart {
     use super::mem::memory_handler::{read, write};
+    use super::cpu::system;
+
     const USART1_BASE: u32 = adresses::USART1_BASEADRESS;
     use core::ptr;
 
@@ -119,8 +121,8 @@ pub mod uart {
     }
     impl UsartX {
         pub fn enable(&self) {
-            let usartx_brr = self.usart_base_adress | 0x0C;
-            let baudrate_divisor = 8_000_000 / self.baudrate;
+            let usartx_brr = self.usart_base_adress | offsets::usart1::BRR;
+            let baudrate_divisor = system::CLOCK / self.baudrate;
             // clk / 9600 baud
             write(usartx_brr, baudrate_divisor);
 

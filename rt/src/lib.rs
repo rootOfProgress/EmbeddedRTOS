@@ -54,7 +54,7 @@ fn setup_clock_system() {
 
     // USART1EN -> p 166
     let rcc_apb2enr: u32 = adresses::RCC | offsets::rcc::RCC_APB2ENR;
-    write(rcc_apb2enr, read(rcc_apb2enr) | ((0b1 << bitfields::usart1::USART1EN) | 0b1));
+    write(rcc_apb2enr, read(rcc_apb2enr) | ((0b1 << bitfields::rcc::USART1EN) | bitfields::rcc::SYSCFGEN));
 }
 
 fn enable_serial_printing() {
@@ -229,6 +229,9 @@ pub extern "C" fn SVCall() {
                 let str_start = trap_meta_info.payload;
                 print_from_ptr(str_start as *mut u8);
                 enable_systick();
+            }
+            _ => {
+                // not implemented yet...
             }
         }
     }

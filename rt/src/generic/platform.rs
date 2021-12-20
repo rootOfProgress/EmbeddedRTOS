@@ -19,6 +19,7 @@ pub mod offsets {
     pub mod usart1 {
         pub const TDR: u32 = 0x28;
         pub const ISR: u32 = 0x1C;
+        pub const BRR: u32 = 0x0C;
     }
     pub mod tim {
         pub const DIER: u32 = 0x0C;
@@ -33,11 +34,12 @@ pub mod offsets {
 
 pub mod bitfields {
     pub mod rcc {
+        pub const SYSCFGEN: u32 = 1;
         pub const IOPAEN: u32 = 17;
         pub const IOPEEN: u32 = 21;
+        pub const USART1EN: u32 = 14;
     } 
     pub mod usart1 {
-        pub const USART1EN: u32 = 14;
     }
     pub mod tim {
         pub const CEN: u32 = 0b1;

@@ -1,3 +1,7 @@
+pub mod system {
+    pub const CLOCK: u32 = 8_000_000;
+}
+
 pub mod c_adresses {
     // page 244
     pub const SCB: u32 = 0xE000_ED00;

@@ -1,0 +1,29 @@
+cargo:rustc-link-search=/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out
+TARGET = Some("thumbv7em-none-eabihf")
+OPT_LEVEL = Some("0")
+HOST = Some("x86_64-unknown-linux-gnu")
+CC_thumbv7em-none-eabihf = None
+CC_thumbv7em_none_eabihf = None
+TARGET_CC = None
+CC = None
+CROSS_COMPILE = None
+CFLAGS_thumbv7em-none-eabihf = None
+CFLAGS_thumbv7em_none_eabihf = None
+TARGET_CFLAGS = None
+CFLAGS = None
+CRATE_CC_NO_DEFAULTS = None
+DEBUG = Some("true")
+CARGO_CFG_TARGET_FEATURE = Some("dsp,mclass,thumb-mode,v5te,v6,v6k,v6t2,v7")
+running: "arm-none-eabi-gcc" "-O0" "-ffunction-sections" "-fdata-sections" "-g" "-fno-omit-frame-pointer" "-mthumb" "-mfloat-abi=hard" "-march=armv7e-m" "-mfpu=fpv4-sp-d16" "-Wall" "-Wextra" "-o" "/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out/./src/asm/dispatch_mng.o" "-c" "./src/asm/dispatch_mng.s"
+exit status: 0
+AR_thumbv7em-none-eabihf = None
+AR_thumbv7em_none_eabihf = None
+TARGET_AR = None
+AR = None
+running: "arm-none-eabi-ar" "cq" "/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out/libasm.a" "/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out/./src/asm/dispatch_mng.o"
+exit status: 0
+running: "arm-none-eabi-ar" "s" "/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out/libasm.a"
+exit status: 0
+cargo:rustc-link-lib=static=asm
+cargo:rustc-link-search=native=/home/benni/development/os_dev/EmbeddedRTOS/userspace/target/thumbv7em-none-eabihf/debug/build/rt-33669b57675713b3/out
+cargo:rerun-if-changed=asm.s
