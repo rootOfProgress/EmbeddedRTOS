@@ -25,7 +25,7 @@ pub mod process {
         pc: u32,
         psr: u32,
     }
-    
+
     impl ProcessFrame {
         pub fn new(target: u32) -> ProcessFrame {
             ProcessFrame {
@@ -48,9 +48,8 @@ pub mod process {
                 psr: 0x21000000,
             }
         }
-    } 
+    }
 }
-
 
 pub mod task_control {
     use core::sync::atomic::{AtomicU32, Ordering};
@@ -202,6 +201,7 @@ pub mod scheduler {
         fn __save_process_context();
         fn __load_process_context(addr: u32);
         fn __get_current_psp() -> u32;
+        fn __set_exc_return();
     }
     use super::task_control::{get_sleeping, next_process, update_sp};
 
@@ -211,10 +211,7 @@ pub mod scheduler {
         }
     }
 
-    ///
-    /// Loads the sleeping task and schedules it instant.
-    ///
-    pub fn priority_schedule() {
+    pub fn save_task_context() {
         unsafe {
             // loads process stack pointer value into r0,
             // based on this adress registers r4 - r11 gets
@@ -228,51 +225,28 @@ pub mod scheduler {
             // into the task control block of the process table
             // for further restoring when needed
             update_sp(__get_current_psp());
-
-            // the saved task's state gets changed from running
-            // to ready, because no other event blocks or terminates
-            // the task
-            // set_task_state(task_control::TaskStates::READY);
-
-            // the function next_process returns an u32 adress
-            // to the runnable successors task's stackpointer, which is
-            // saved in the process table. the parameter gets saved
-            // into r0, based from this value the registers r4 - r11
-            // gets popped of the stack and written into the cpu's registers.
-            __load_process_context(get_sleeping());
         }
     }
 
-    ///
-    /// Loads next ready task in line.
-    /// Schedules tasks in round robin manner.
-    ///
-    pub fn context_switch() {
+    pub fn load_next_task() {
         unsafe {
-            // loads process stack pointer value into r0,
-            // based on this adress registers r4 - r11 gets
-            // pushed onto the stack. after finishing this operation,
-            // the new value of r0 (it points now to lower adresses
-            // because registers get pushed onto it) gets assigned
-            // to psp.
-            __save_process_context();
+                // the function next_process returns an u32 adress
+                // to the runnable successors task's stackpointer, which is
+                // saved in the process table. the parameter gets saved
+                // into r0, based from this value the registers r4 - r11
+                // gets popped of the stack and written into the cpu's registers.
+                __load_process_context(next_process());
+            
+        }
+    }
 
-            // the newly written process stack pointer gets written
-            // into the task control block of the process table
-            // for further restoring when needed
-            update_sp(__get_current_psp());
+    pub fn load_sleeping_task() {
+        unsafe {
+                // the function get_sleeping returns an u32 adress
+                // to the task which is currently blocked.
+                // on the other hand it acts similiar to 'next_process()'
+                __load_process_context(get_sleeping());
 
-            // the saved task's state gets changed from running
-            // to ready, because no other event blocks or terminates
-            // the task
-            // set_task_state(task_control::TaskStates::READY);
-
-            // the function next_process returns an u32 adress
-            // to the runnable successors task's stackpointer, which is
-            // saved in the process table. the parameter gets saved
-            // into r0, based from this value the registers r4 - r11
-            // gets popped of the stack and written into the cpu's registers.
-            __load_process_context(next_process());
         }
     }
 }

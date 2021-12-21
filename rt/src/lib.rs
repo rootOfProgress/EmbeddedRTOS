@@ -14,7 +14,7 @@ pub mod mem;
 pub mod sched;
 pub mod sys;
 
-use crate::sched::{scheduler, task_control};
+use crate::sched::{task_control};
 use core::panic::PanicInfo;
 use core::ptr;
 use dev::{tim3, uart::print_from_ptr};
@@ -22,6 +22,7 @@ use generic::platform::{self, adresses, offsets, bitfields};
 use generic::cpu::{self, c_adresses, c_offsets, c_bitfields};
 use interrupts::systick::{disable_systick, enable_systick};
 use mem::memory_handler::{read, write};
+use sched::scheduler::{save_task_context, load_next_task, load_sleeping_task};
 use sys::call_api::TrapMeta;
 
 fn enable_gpio_e_leds() {
@@ -139,16 +140,13 @@ extern "C" {
     fn BusFault();
     fn UsageFault();
     fn __get_r0() -> u32;
-    fn __set_exc_return();
+    fn __return_to_user_mode();
 }
 
 #[no_mangle]
 pub extern "C" fn SysTick() {
-    unsafe {
-        __set_exc_return();
-        disable_systick();
-        set_pending();
-    }
+    disable_systick();
+    set_pending();
 }
 
 fn set_pending() {
@@ -168,8 +166,13 @@ fn set_pending() {
 ///
 #[no_mangle]
 pub extern "C" fn PendSV() {
-    sched::scheduler::context_switch();
+    // sched::scheduler::context_switch();
+    save_task_context();
+    load_next_task();
     enable_systick();
+    unsafe {
+        __return_to_user_mode();
+    }
 }
 
 ///
@@ -252,6 +255,7 @@ pub extern "C" fn Tim3Interrupt() {
     // until sleeping task has successfully restored. otherwise it may occur that the restore
     // gets interrupted by systick and the overlaying context switch destroys the task switch workflow
     disable_systick();
+    save_task_context();
     tim3::stop();
 
     // clear interrupt flag to prevent hanging in ISR
@@ -260,9 +264,7 @@ pub extern "C" fn Tim3Interrupt() {
     // reset counter value to 0
     tim3::flush();
 
-    // wake up sleeping task
-    scheduler::priority_schedule();
-
+    load_sleeping_task();
     enable_systick();
 }
 
