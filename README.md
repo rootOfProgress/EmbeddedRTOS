@@ -1,3 +1,5 @@
+**!!!!THIS IS NOT MAINTAINED ANYMORE, PLEASE SEE https://github.com/wolfbiker1/NextLevelRTOS FOR THE UP-TO-DATE ONE!!!!**
+
 # NextLevelRTOS
 
 [![Cortex M Types](https://img.shields.io/badge/target-thumbv7em--none--eabihf-green)](https://docs.rust-embedded.org/cortex-m-quickstart/cortex_m_quickstart/) 
